@@ -115,7 +115,7 @@ function logo(size = '') {
   const mark = escapeHtml(co.logoMark || co.logoText || co.companyName[0]);
   const src = co.logo ? escapeHtml(co.logo) : '';
   const image = src ? `<img src="${src}" alt="${label}" loading="eager">` : mark;
-  return `<div class="logo brand-logo ${src ? 'has-image' : 'text-logo'} ${size}">${image}</div>`;
+  return `<div class="logo brand-logo logo-${key} ${src ? 'has-image' : 'text-logo'} ${size}">${image}</div>`;
 }
 
 function brandFooter(label = '믿고 맡기는 프리미엄 홈케어 상담') {
@@ -491,7 +491,7 @@ function digits(value) {
 function contactHref(type) {
   const phone = digits(co.phoneNumber);
   const sms = digits(co.smsNumber || co.phoneNumber);
-  const smsBody = encodeURIComponent(`안녕하세요. ${co.companyName} 청소 상담 문의드립니다.`);
+  const smsBody = encodeURIComponent(`${adminText()}\n\n안녕하세요. 위 내용으로 ${co.companyName} 청소 상담 문의드립니다.`);
   if (type === 'phone') return phone ? `tel:${phone}` : '';
   if (type === 'sms') return sms ? `sms:${sms}?body=${smsBody}` : '';
   if (type === 'kakao') return co.kakaoChannelLink || '';
@@ -522,9 +522,10 @@ function complete() {
         ${linkButton('문자 상담하기', contactHref('sms'), 'secondary-action')}
         ${linkButton('네이버 톡톡으로 상담 이어가기', contactHref('naver'), 'secondary-action')}
       </div>
-      <h2>상담 요약</h2>
-      <button class="ghost copy-button" onclick="copy()">상담 내용 복사하기</button>
-      <textarea id="admin" readonly>${admin}</textarea>
+      <div class="copy-area">
+        <button class="ghost copy-button" onclick="copy()">상담 내용 복사하기</button>
+        <textarea id="admin" class="admin-hidden" readonly aria-hidden="true" tabindex="-1">${admin}</textarea>
+      </div>
       <p><small>담당자가 확인 후 안내드립니다. 추가 사진이나 요청사항은 전화 상담 후 안내받은 번호, 카카오톡, 문자 또는 네이버 톡톡으로 보내주세요.</small></p>
       ${brandFooter('상담 접수 완료')}
     </section>`;
