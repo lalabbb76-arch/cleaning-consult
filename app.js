@@ -91,6 +91,11 @@ function logo() {
   return `<div class="logo">${co.logoText || co.companyName[0]}</div>`;
 }
 
+function servicePills() {
+  return ['에어컨 분해청소', '입주청소', '이사청소', '거주청소', '정기청소']
+    .map((item) => `<span>${item}</span>`).join('');
+}
+
 function init() {
   theme();
   hero();
@@ -100,22 +105,35 @@ function init() {
 function hero() {
   $('#app').innerHTML = `
     <div class="brand hero-brand">${logo()}<div><b>${co.companyName}</b><br><small>${co.toneLabel}</small></div></div>
-    <div class="hero-art">
-      <div class="service-pills"><span>에어컨 분해청소</span><span>입주청소</span><span>이사청소</span><span>거주청소</span><span>정기청소</span></div>
-      <div class="fake"><div class="line w70"></div><div class="line"></div><div class="line w45"></div></div>
-    </div>
+    <div class="hero-kicker">안심되는 프리미엄 홈케어 상담</div>
     <h1>${co.startTitle}</h1>
-    <p>${co.heroBody.replace(/\n/g, '<br>')}</p>
-    <button class="primary full hero-btn" onclick="start()">상담 시작하기</button>`;
+    <p class="hero-copy">${co.heroBody.replace(/\n/g, '<br>')}</p>
+    <div class="hero-art">
+      <div class="air-flow" aria-hidden="true"></div>
+      <div class="service-pills">${servicePills()}</div>
+      <div class="trust-panel">
+        <div><b>1~2분 접수</b><span>주소와 기본 정보만 간편하게</span></div>
+        <div><b>사진은 상담 후</b><span>페이지에 직접 저장하지 않습니다</span></div>
+        <div><b>상담 방법 선택</b><span>전화, 문자, 톡톡으로 부담 없이 상담</span></div>
+      </div>
+    </div>
+    <button class="primary full hero-btn" onclick="start()">상담 시작하기</button>
+    <p class="micro-copy">전화가 부담되면 문자나 톡톡으로도 천천히 남기실 수 있습니다.</p>`;
 }
 
 function blog() {
   $('#blog').innerHTML = `
-    <div class="brand">${logo()}<div><b>${co.companyName}</b><br><small>빠른 청소 상담 안내</small></div></div>
+    <div class="brand cta-brand">${logo()}<div><b>${co.companyName}</b><br><small>상담 링크 안내</small></div></div>
+    <div class="cta-chip">에어컨 · 입주 · 이사 통합 상담</div>
     <h2>${co.blogCtaTitle}</h2>
     <p>${co.blogCtaBody.replace(/\n/g, '<br>')}</p>
+    <div class="cta-mini-list">
+      <span>상담 범위 정리</span>
+      <span>예산 확인 준비</span>
+      <span>사진은 상담 후 전송</span>
+    </div>
     <button class="primary full" onclick="start()">${co.blogCtaButton}</button>
-    <p><small>전화 / 카카오톡 / 문자 / 네이버 톡톡 모두 가능합니다.</small></p>`;
+    <p><small>전화, 카카오톡, 문자, 네이버 톡톡으로 이어서 상담할 수 있습니다.</small></p>`;
 }
 
 function start() {
@@ -147,7 +165,7 @@ function progress() {
 }
 
 function layout(title, body, footer = '') {
-  $('#app').innerHTML = `${progress()}<section class="step"><h1>${title}</h1>${body}</section><div class="nav">${footer || '<button class="ghost skip" onclick="next()">건너뛰기</button><button class="primary next" onclick="next()">다음</button>'}</div>`;
+  $('#app').innerHTML = `<div class="step-brand">${logo()}<div><b>${co.companyName}</b><small>${co.toneLabel}</small></div></div>${progress()}<section class="step"><h1>${title}</h1>${body}</section><div class="nav">${footer || '<button class="ghost skip" onclick="next()">건너뛰기</button><button class="primary next" onclick="next()">다음</button>'}</div>`;
 }
 
 function chips(field, options, multi = false, extraClass = '') {
@@ -173,9 +191,9 @@ function render() {
   }
   if (step === 'service') {
     layout('어떤 청소가 필요하신가요?', `
-      <p>필요한 청소를 모두 선택해주세요.<br>에어컨 청소와 입주·이사청소를 함께 상담받으실 수도 있습니다.</p>
+      <p>대표 서비스를 모두 선택해주세요.<br>에어컨 청소와 입주·이사청소를 함께 상담받으실 수도 있습니다.</p>
       ${chips('serviceKinds', co.serviceKinds, true, 'service-chips')}
-      <div class="hint">에어컨 청소와 입주·이사청소를 함께 선택하셔도 됩니다.<br>상담 내용을 보고 필요한 범위를 함께 확인해드립니다.</div>`);
+      <div class="hint">부분청소, 사무실청소, 상가청소처럼 추가 상담이 필요하면 뒤 단계의 메모나 전화 상담에서 함께 말씀해주셔도 됩니다.</div>`);
   }
   if (step === 'aircon') {
     layout('에어컨 정보를 알려주세요.', `
@@ -398,8 +416,8 @@ function complete() {
         ${linkButton('문자 상담하기', contactHref('sms'), 'secondary-action')}
         ${linkButton('네이버 톡톡으로 상담 이어가기', contactHref('naver'), 'secondary-action')}
       </div>
-      <h2>대표님 전달용 상담 요약</h2>
-      <button class="ghost copy-button" onclick="copy()">요약 복사하기</button>
+      <h2>상담 요약</h2>
+      <button class="ghost copy-button" onclick="copy()">상담 내용 복사하기</button>
       <textarea id="admin" readonly>${admin}</textarea>
       <p><small>담당자가 확인 후 안내드립니다. 추가 사진이나 요청사항은 전화 상담 후 안내받은 번호, 카카오톡, 문자 또는 네이버 톡톡으로 보내주세요.</small></p>
     </section>`;
