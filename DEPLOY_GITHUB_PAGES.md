@@ -59,9 +59,9 @@ Save
 companyA: {
   companyName: "새 청소업체",
   logoText: "새",
-  mainColor: "#6FBF9A",
+  mainColor: "#5EA98A",
   subColor: "#F5FBF8",
-  buttonColor: "#4FAF86",
+  buttonColor: "#3F9477",
   serviceType: "cleaning",
   kakaoLink: "",
   naverTalkLink: "",
