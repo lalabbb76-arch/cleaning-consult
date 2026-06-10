@@ -19,7 +19,7 @@ const BUSINESS_STATUSES = ['영업 전', '영업 중', '폐업/공실', '이사 
 const FIXTURE_LEVELS = ['거의 없음', '일부 있음', '많음', '이동 필요', UNKNOWN];
 const AIRCON_TYPES = ['벽걸이', '스탠드', '2 in 1', '시스템 1way', '시스템 4way', UNKNOWN];
 const AIRCON_COUNTS = ['1대', '2대', '3대', '4대 이상', UNKNOWN];
-const AIRCON_CONCERNS = ['냄새가 많이 나요', '곰팡이 냄새가 나요', '쉰내가 나요', '청소한 지 오래됐어요', UNKNOWN];
+const AIRCON_CONCERNS = ['냄새가 나요', '곰팡이가 보여요', '청소한 지 오래됐어요', '아이/가족 건강이 걱정돼요', UNKNOWN];
 const TIME_SLOTS = ['9시~12시', '12시~3시', '3시~6시', '6시 이후', '시간 미정'];
 
 const f = {
@@ -52,7 +52,7 @@ const f = {
 };
 
 const score = {
-  '냄새가 많이 나요': 1, '곰팡이 냄새가 나요': 2, '쉰내가 나요': 1, '청소한 지 오래됐어요': 1,
+  '냄새가 나요': 1, '곰팡이가 보여요': 2, '청소한 지 오래됐어요': 1, '아이/가족 건강이 걱정돼요': 1,
   '냄새': 1, '담배냄새/찌든냄새': 2, '곰팡이': 2, '먼지': 1, '바람 약함': 1, '물 떨어짐': 2, '오래 사용함': 1,
   '아기/가족 건강 때문에': 1, '반려동물 털/냄새': 1, '창틀 먼지': 1, '욕실 물때': 1, '주방 기름때': 2,
   '공사먼지': 2, '부분 인테리어 후 먼지': 2, '페인트 자국/먼지': 2, '수납장 내부 먼지': 1,
@@ -248,7 +248,7 @@ function render() {
       <h3>청소할 에어컨은 몇 대인가요?</h3>${chips('airconCount', AIRCON_COUNTS)}
       <h3>청소가 필요한 이유가 있으신가요?</h3>${chips('airconConcerns', AIRCON_CONCERNS, true)}
       <h3>추가로 알려주실 내용이 있으면 적어주세요.</h3>
-      <textarea oninput="f.airconNote=this.value" placeholder="예: 거실 스탠드 1대 + 안방 벽걸이 1대 / 2 in 1 1세트 / 냄새가 심해요 / 오래 청소를 안 했어요">${escapeHtml(f.airconNote)}</textarea>`);
+      <textarea oninput="f.airconNote=this.value" placeholder="예: 곰팡이 냄새가 나요 / 쉰내가 나요 / 담배냄새가 걱정돼요 / 반려동물을 키워요 / 오래 청소를 안 했어요">${escapeHtml(f.airconNote)}</textarea>`);
   }
   if (step === 'area') {
     const optional = hasAirconService() ? '<div class="hint">에어컨 청소와 함께 상담받는 경우, 평수는 대략만 선택하셔도 괜찮습니다.</div>' : '';
