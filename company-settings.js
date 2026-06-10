@@ -33,7 +33,7 @@ const companySettings = {
   zendella: {
     companyName: '전데렐라의 청소생각',
     logoText: '전',
-    logo: 'assets/logos/zendella-logo.svg',
+    logo: 'assets/logos/cleanthinking-logo-only.png',
     logoAlt: '전데렐라의 청소생각 로고',
     logoMark: '전',
     mainColor: '#6FBF9A',
@@ -65,7 +65,7 @@ const companySettings = {
   tsunami: {
     companyName: '쓰나미파워클린',
     logoText: '쓰',
-    logo: 'assets/logos/tsunami-official-logo.png',
+    logo: 'assets/logos/tsunami-logo.svg',
     logoAlt: '쓰나미파워클린 로고',
     logoMark: '쓰',
     mainColor: '#1E88E5',
