@@ -517,6 +517,7 @@ function adminText() {
 }
 
 function smsDraftText() {
+  const extraRequest = [f.scheduleNote, joinedExtraNotes()].filter(Boolean).join(' / ');
   return [
     '안녕하세요. 청소 상담 문의드립니다.',
     '',
@@ -527,13 +528,10 @@ function smsDraftText() {
     `에어컨 종류: ${compactList(f.airconTypes)}`,
     `에어컨 대수: ${f.airconCount || ''}`,
     `청소 이유: ${compactList(f.airconConcerns)}`,
-    `에어컨 추가 내용: ${f.airconNote || ''}`,
-    `평수/면적: ${f.area || ''}`,
-    `오염 상태: ${compactList(f.dirt)}`,
     `희망 일정: ${scheduleText()}`,
     `희망 시간대: ${f.scheduleTime || ''}`,
-    `추가 요청사항: ${[f.scheduleNote, joinedExtraNotes()].filter(Boolean).join(' / ')}`,
-    '사진: 상담 후 별도 전송'
+    '사진: 상담 후 별도 전송',
+    `추가 요청: ${extraRequest}`
   ].join('\n');
 }
 
@@ -638,7 +636,8 @@ async function complete() {
       <div class="actions">
         ${linkButton('전화 상담 요청하기', contactHref('phone'), 'primary-action phone-action', '전화 상담')}
         ${linkButton('카카오톡으로 상담 이어가기', contactHref('kakao'), 'secondary-action kakao-action', '카카오톡 상담')}
-        ${linkButton('문자 상담하기', contactHref('sms'), 'secondary-action', '문자 상담')}
+        ${linkButton('문자 상담하기', contactHref('sms'), 'secondary-action sms-action', '문자 상담')}
+        <p class="sms-help">문자 상담을 누르면 입력하신 상담 내용이 문자에 자동으로 들어갑니다.<br>보내기만 눌러주시면 상담 내용을 확인할 수 있습니다.</p>
         ${linkButton('네이버 톡톡으로 상담 이어가기', contactHref('naver'), 'secondary-action', '네이버 톡톡 상담')}
       </div>
       <div class="copy-area">

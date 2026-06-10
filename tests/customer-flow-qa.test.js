@@ -93,9 +93,27 @@ function setRepresentativeData(ctx, variant = 'aircon') {
     assert.ok(html.includes('상담 요약 보기'));
     assert.ok(!html.includes('<textarea id="admin" class="admin-visible"'));
     assert.ok(ctx.contactHref('phone').startsWith('tel:010'));
-    const sms = decodeURIComponent(ctx.contactHref('sms').split('body=')[1]);
+    const smsHref = ctx.contactHref('sms');
+    const expectedSmsNumber = company === 'zendella' ? '01087659925' : '01046569925';
+    assert.ok(smsHref.startsWith(`sms:${expectedSmsNumber}?body=`));
+    const sms = decodeURIComponent(smsHref.split('body=')[1]);
     assert.ok(sms.includes('안녕하세요. 청소 상담 문의드립니다.'));
+    assert.ok(sms.includes(`브랜드: ${company === 'zendella' ? '전데렐라의 청소생각' : '쓰나미파워클린'}`));
+    assert.ok(sms.includes('주소/건물명: 신길동 레이안아파트'));
+    assert.ok(sms.includes('공간 유형: 아파트'));
+    assert.ok(sms.includes('상담 종류: 에어컨 분해청소, 입주청소'));
+    assert.ok(sms.includes('에어컨 종류: 벽걸이'));
+    assert.ok(sms.includes('에어컨 대수: 2대'));
+    assert.ok(sms.includes('청소 이유: 냄새가 나요'));
+    assert.ok(sms.includes('희망 일정: 2026년 6월 15일'));
+    assert.ok(sms.includes('희망 시간대: 9시~12시'));
     assert.ok(sms.includes('사진: 상담 후 별도 전송'));
+    assert.ok(sms.includes('추가 요청: 오전 상담 원합니다'));
+    assert.ok(!sms.includes('에어컨 추가 내용'));
+    assert.ok(!sms.includes('평수/면적'));
+    assert.ok(!sms.includes('오염 상태'));
+    assert.ok(sms.length <= 360, `SMS draft too long: ${sms.length}`);
+    assert.ok(html.includes('문자 상담을 누르면 입력하신 상담 내용이 문자에 자동으로 들어갑니다.'));
   }
 
   const failCtx = createContext('tsunami', async () => { throw new Error('forced failure'); });
