@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="120" viewBox="0 0 360 120" role="img" aria-labelledby="title desc">
+  <title id="title">쓰나미파워클린 로고</title>
+  <desc id="desc">블루 원형 심볼과 쓰나미파워클린 워드마크</desc>
+  <defs>
+    <linearGradient id="tg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7EC8FF"/><stop offset="1" stop-color="#1565C0"/></linearGradient>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="10" stdDeviation="10" flood-color="#155FAE" flood-opacity=".18"/></filter>
+  </defs>
+  <rect width="360" height="120" rx="32" fill="#F4FAFF"/>
+  <circle cx="61" cy="60" r="38" fill="url(#tg)" filter="url(#soft)"/>
+  <path d="M38 64c9-11 20-13 32-4 8 6 17 5 28-4M43 78c11-7 22-7 34 0 8 5 16 5 26 0" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round"/>
+  <text x="116" y="59" fill="#102E4A" font-family="Pretendard, Noto Sans KR, Arial, sans-serif" font-size="29" font-weight="900" letter-spacing="-1.7">쓰나미</text>
+  <text x="211" y="59" fill="#1E88E5" font-family="Pretendard, Noto Sans KR, Arial, sans-serif" font-size="29" font-weight="900" letter-spacing="-1.7">파워클린</text>
+  <text x="117" y="86" fill="#52718B" font-family="Pretendard, Noto Sans KR, Arial, sans-serif" font-size="14" font-weight="700" letter-spacing="-.3">clean air · reliable homecare</text>
+  <path d="M116 94h164" stroke="#86C8F7" stroke-width="3" stroke-linecap="round" opacity=".78"/>
+</svg>

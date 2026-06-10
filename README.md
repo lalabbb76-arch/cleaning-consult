@@ -81,3 +81,22 @@ https://lalabbb76-arch.github.io/cleaning-consult/?company=tsunami
 - 사진 저장소 연결
 - 상담 접수 DB 연결
 - 이메일/문자/알림 발송 연결
+
+## Brand logo settings
+
+Each brand logo is managed in `company-settings.js` so the same consultation flow can switch logo, brand name, and colors together.
+
+Fields used per brand:
+
+- `logo`: SVG/PNG path, e.g. `assets/logos/zendella-logo.svg`
+- `logoAlt`: accessible alt text
+- `logoMark`: short fallback text mark
+- `companyName`, `mainColor`, `subColor`, `buttonColor`
+
+Current logo placements:
+
+1. Hero top brand area
+2. CTA card top brand area
+3. Step header brand area
+4. Completion screen top area
+5. Subtle footer brand repeat

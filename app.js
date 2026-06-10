@@ -87,8 +87,16 @@ function theme() {
   $$('[data-co]').forEach((button) => button.classList.toggle('on', button.dataset.co === key));
 }
 
-function logo() {
-  return `<div class="logo">${co.logoText || co.companyName[0]}</div>`;
+function logo(size = '') {
+  const label = escapeHtml(co.logoAlt || `${co.companyName} 로고`);
+  const mark = escapeHtml(co.logoMark || co.logoText || co.companyName[0]);
+  const src = co.logo ? escapeHtml(co.logo) : '';
+  const image = src ? `<img src="${src}" alt="${label}" loading="eager">` : mark;
+  return `<div class="logo brand-logo ${src ? 'has-image' : 'text-logo'} ${size}">${image}</div>`;
+}
+
+function brandFooter(label = '믿고 맡기는 프리미엄 홈케어 상담') {
+  return `<div class="brand-footer">${logo('footer-logo')}<span>${escapeHtml(co.companyName)}</span><small>${label}</small></div>`;
 }
 
 function servicePills() {
@@ -118,7 +126,8 @@ function hero() {
       </div>
     </div>
     <button class="primary full hero-btn" onclick="start()">상담 시작하기</button>
-    <p class="micro-copy">전화가 부담되면 문자나 톡톡으로도 천천히 남기실 수 있습니다.</p>`;
+    <p class="micro-copy">전화가 부담되면 문자나 톡톡으로도 천천히 남기실 수 있습니다.</p>
+    ${brandFooter('전화 · 카카오톡 · 문자 · 네이버 톡톡 상담 가능')}`;
 }
 
 function blog() {
@@ -133,7 +142,8 @@ function blog() {
       <span>사진은 상담 후 전송</span>
     </div>
     <button class="primary full" onclick="start()">${co.blogCtaButton}</button>
-    <p><small>전화, 카카오톡, 문자, 네이버 톡톡으로 이어서 상담할 수 있습니다.</small></p>`;
+    <p><small>전화, 카카오톡, 문자, 네이버 톡톡으로 이어서 상담할 수 있습니다.</small></p>
+    ${brandFooter('에어컨 · 입주 · 이사청소 통합 상담')}`;
 }
 
 function start() {
@@ -420,6 +430,7 @@ function complete() {
       <button class="ghost copy-button" onclick="copy()">상담 내용 복사하기</button>
       <textarea id="admin" readonly>${admin}</textarea>
       <p><small>담당자가 확인 후 안내드립니다. 추가 사진이나 요청사항은 전화 상담 후 안내받은 번호, 카카오톡, 문자 또는 네이버 톡톡으로 보내주세요.</small></p>
+      ${brandFooter('상담 접수 완료')}
     </section>`;
 }
 

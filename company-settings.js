@@ -33,6 +33,9 @@ const companySettings = {
   zendella: {
     companyName: '전데렐라의 청소생각',
     logoText: '전',
+    logo: 'assets/logos/zendella-logo.svg',
+    logoAlt: '전데렐라의 청소생각 로고',
+    logoMark: '전',
     mainColor: '#6FBF9A',
     subColor: '#F5FBF8',
     buttonColor: '#4FAF86',
@@ -62,6 +65,9 @@ const companySettings = {
   tsunami: {
     companyName: '쓰나미파워클린',
     logoText: '쓰',
+    logo: 'assets/logos/tsunami-logo.svg',
+    logoAlt: '쓰나미파워클린 로고',
+    logoMark: '쓰',
     mainColor: '#1E88E5',
     subColor: '#F3FAFF',
     buttonColor: '#1565C0',
@@ -91,6 +97,9 @@ const companySettings = {
   sampleCompany: {
     companyName: '샘플 업체',
     logoText: '샘',
+    logo: 'assets/logos/sample-logo.svg',
+    logoAlt: '샘플 업체 로고',
+    logoMark: '샘',
     mainColor: '#8A7CF6',
     subColor: '#F7F5FF',
     buttonColor: '#7061E8',
