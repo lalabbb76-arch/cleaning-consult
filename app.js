@@ -8,10 +8,10 @@ if (!companySettings[key]) key = 'zendella';
 let co = companySettings[key];
 let i = -1;
 
-const AIRCON_SERVICES = ['에어컨 분해청소', '벽걸이 에어컨 청소', '스탠드 에어컨 청소', '2 in 1 에어컨 청소', '시스템 에어컨 청소'];
-const HOME_DETAIL_SERVICES = ['입주청소', '이사청소', '거주청소', '부분청소', '사무실청소', '상가청소'];
+const AIRCON_SERVICES = ['에어컨 분해청소'];
+const HOME_DETAIL_SERVICES = ['입주청소', '이사청소', '거주청소', '정기청소', '부분청소', '사무실청소', '상가청소'];
 const UNKNOWN = '잘 모르겠어요';
-const AIRCON_TYPES = ['벽걸이', '스탠드', '2 in 1', '시스템 1way', '시스템 4way', '천장형/매립형', UNKNOWN];
+const AIRCON_TYPES = ['벽걸이', '스탠드', '2 in 1', '시스템 1way', '시스템 4way', UNKNOWN];
 const AIRCON_COUNTS = ['1대', '2대', '3대', '4대 이상', UNKNOWN];
 const AIRCON_CONCERNS = ['냄새', '곰팡이', '먼지', '바람 약함', '물 떨어짐', '오래 사용함', '아기/가족 건강 때문에', UNKNOWN];
 
@@ -19,7 +19,7 @@ const f = {
   address: '',
   spaceType: '',
   serviceKinds: [],
-  airconType: '',
+  airconTypes: [],
   airconCount: '',
   airconConcerns: [],
   airconNote: '',
@@ -101,7 +101,7 @@ function hero() {
   $('#app').innerHTML = `
     <div class="brand hero-brand">${logo()}<div><b>${co.companyName}</b><br><small>${co.toneLabel}</small></div></div>
     <div class="hero-art">
-      <div class="service-pills"><span>에어컨 분해청소</span><span>입주청소</span><span>이사청소</span></div>
+      <div class="service-pills"><span>에어컨 분해청소</span><span>입주청소</span><span>이사청소</span><span>거주청소</span><span>정기청소</span></div>
       <div class="fake"><div class="line w70"></div><div class="line"></div><div class="line w45"></div></div>
     </div>
     <h1>${co.startTitle}</h1>
@@ -111,11 +111,11 @@ function hero() {
 
 function blog() {
   $('#blog').innerHTML = `
-    <div class="brand">${logo()}<div><b>블로그 삽입용 CTA</b><br><small>${co.companyName}</small></div></div>
+    <div class="brand">${logo()}<div><b>${co.companyName}</b><br><small>빠른 청소 상담 안내</small></div></div>
     <h2>${co.blogCtaTitle}</h2>
     <p>${co.blogCtaBody.replace(/\n/g, '<br>')}</p>
     <button class="primary full" onclick="start()">${co.blogCtaButton}</button>
-    <p><small>블로그, QR코드, 문자, 카카오톡, 네이버 플레이스에 연결할 수 있습니다.</small></p>`;
+    <p><small>전화 / 카카오톡 / 문자 / 네이버 톡톡 모두 가능합니다.</small></p>`;
 }
 
 function start() {
@@ -180,10 +180,10 @@ function render() {
   if (step === 'aircon') {
     layout('에어컨 정보를 알려주세요.', `
       <p>정확히 모르셔도 괜찮습니다.<br>아는 부분만 선택해주시면 상담에 도움이 됩니다.</p>
-      <h3>어떤 에어컨인가요?</h3>${chips('airconType', AIRCON_TYPES)}
+      <h3>에어컨 종류</h3>${chips('airconTypes', AIRCON_TYPES, true)}
       <h3>청소할 에어컨은 몇 대인가요?</h3>${chips('airconCount', AIRCON_COUNTS)}
-      <h3>어떤 점이 걱정되시나요?</h3>${chips('airconConcerns', AIRCON_CONCERNS, true)}
-      <textarea oninput="f.airconNote=this.value" placeholder="예: 거실 스탠드 1대, 안방 벽걸이 1대 / 2 in 1 / 시스템 에어컨 4대 / 냄새가 심해요">${escapeHtml(f.airconNote)}</textarea>`);
+      <h3>걱정되는 부분</h3>${chips('airconConcerns', AIRCON_CONCERNS, true)}
+      <textarea oninput="f.airconNote=this.value" placeholder="예: 거실 스탠드 1대 + 안방 벽걸이 1대 / 2 in 1 1세트 / 시스템 1way 2대 / 냄새가 심해요">${escapeHtml(f.airconNote)}</textarea>`);
   }
   if (step === 'area') {
     const optional = hasAirconService() ? '<div class="hint">에어컨 청소와 함께 상담받는 경우, 평수는 대략만 선택하셔도 괜찮습니다.</div>' : '';
@@ -215,7 +215,7 @@ function render() {
       <p>사진이 있으면 더 정확한 상담이 가능합니다.</p>
       <p>현재 페이지에서는 사진을 직접 저장하지 않습니다.<br>상담 내용을 먼저 남겨주신 뒤, 전화 상담 후 안내받은 번호나 카카오톡, 문자, 네이버 톡톡으로 사진을 보내주세요.</p>
       <div class="hint">사진은 예쁘게 찍지 않으셔도 괜찮습니다. 전체 구조와 걱정되는 부분이 보이면 충분합니다.</div>
-      <div class="upload notice-upload"><b>사진은 이 페이지에 저장되지 않습니다.</b><br>상담 접수 후 편한 방법으로 이어서 보내주세요.</div>
+      <div class="upload notice-upload"><b>사진은 상담 후 별도 전송</b><br>현재 페이지에서는 사진을 직접 저장하지 않습니다.<br>전화 상담 후 안내받은 번호나 카카오톡, 문자, 네이버 톡톡으로 보내주세요.</div>
       <div class="upload-actions">
         <button class="ghost" onclick="examples()">사진 예시 보기</button>
         <button class="secondary" onclick="photoInfo()">상담 후 사진 보내기</button>
@@ -235,6 +235,12 @@ function render() {
         <button class="contact-chip kakao ${f.contact === '카카오톡 상담' ? 'sel' : ''}" onclick="sel('contact','카카오톡 상담')">카카오톡 상담</button>
         <button class="contact-chip ${f.contact === '문자 상담' ? 'sel' : ''}" onclick="sel('contact','문자 상담')">문자 상담</button>
         <button class="contact-chip ${f.contact === '네이버 톡톡 상담' ? 'sel' : ''}" onclick="sel('contact','네이버 톡톡 상담')">네이버 톡톡 상담</button>
+      </div>
+      <div class="quick-contact">
+        <a class="quick-contact-main" href="${contactHref('phone')}" onclick="f.contact='전화 상담'">바로 전화 상담하기</a>
+        <a href="${contactHref('kakao') || '#'}" class="${contactHref('kakao') ? '' : 'disabled'}" onclick="f.contact='카카오톡 상담'">카카오톡 상담</a>
+        <a href="${contactHref('sms')}" onclick="f.contact='문자 상담'">문자 상담</a>
+        <a href="${contactHref('naver') || '#'}" class="${contactHref('naver') ? '' : 'disabled'}" onclick="f.contact='네이버 톡톡 상담'">네이버 톡톡</a>
       </div>
       <div class="hint">사진은 상담 후 카카오톡이나 문자로 보내주시면 더 정확히 안내드릴 수 있습니다.</div>`);
   }
@@ -258,7 +264,7 @@ function tog(field, value) {
     else arr.push(value);
   }
   if (field === 'serviceKinds' && !hasAirconService()) {
-    f.airconType = '';
+    f.airconTypes = [];
     f.airconCount = '';
     f.airconConcerns = [];
     f.airconNote = '';
@@ -294,7 +300,7 @@ function closeModal() {
 function examples() {
   const aircon = co.photoGuide.slice(0, 5).map((guide, idx) => `<li><b>${idx + 1}. ${guide[0]}</b><br>${guide[1]}</li>`).join('');
   const home = co.photoGuide.slice(5).map((guide, idx) => `<li><b>${idx + 1}. ${guide[0]}</b><br>${guide[1]}</li>`).join('');
-  showModal('사진 예시 보기', `<h3>에어컨 분해청소 사진 예시</h3><ol>${aircon}</ol><h3>입주청소/이사청소 사진 예시</h3><ol>${home}</ol>`);
+  showModal('사진 예시 보기', `<div class="important-photo">모델명/제품 스티커가 가장 중요합니다.</div><h3>에어컨 분해청소 사진 예시</h3><ol>${aircon}</ol><h3>입주청소/이사청소 사진 예시</h3><ol>${home}</ol>`);
 }
 
 function photoInfo() {
@@ -320,7 +326,7 @@ function homeStructure() {
 function airconRows() {
   if (!hasAirconService()) return [];
   return [
-    ['에어컨 종류', f.airconType],
+    ['에어컨 종류', f.airconTypes.join(', ') || '미입력'],
     ['에어컨 대수', f.airconCount],
     ['걱정되는 부분', f.airconConcerns.join(', ') || '미입력'],
     ['에어컨 추가 내용', f.airconNote || '미입력']
@@ -346,7 +352,7 @@ function summaryRows() {
 
 function adminText() {
   const airconBlock = hasAirconService()
-    ? `에어컨 종류: ${f.airconType || ''}\n에어컨 대수: ${f.airconCount || ''}\n에어컨 걱정 부분: ${f.airconConcerns.join(', ')}\n`
+    ? `에어컨 종류: ${f.airconTypes.join(', ')}\n에어컨 대수: ${f.airconCount || ''}\n에어컨 걱정 부분: ${f.airconConcerns.join(', ')}\n추가 내용: ${f.airconNote || ''}\n`
     : '';
   const homeBlock = hasHomeDetailService()
     ? `평수: ${f.area || ''}\n구조: ${homeStructure()}\n수리 여부: ${f.repair.join(', ')}\n오염 상태: ${f.dirt.join(', ')}\n`
@@ -354,9 +360,25 @@ function adminText() {
   return `[${co.adminSummaryTitle}]\n\n주소/건물명: ${f.address || ''}\n공간 유형: ${f.spaceType || ''}\n상담 종류: ${serviceText()}\n${airconBlock}${homeBlock}사진: 상담 후 별도 전송\n희망 일정: ${f.schedule || ''}\n선호 연락 방법: ${f.contact || ''}\n추가 요청: ${[f.airconNote, f.structureNote, f.repairNote, f.scheduleNote].filter(Boolean).join(' / ')}\n\n내부 확인 필요도: ${risk()}`;
 }
 
+function digits(value) {
+  return String(value || '').replace(/[^0-9+]/g, '');
+}
+
+function contactHref(type) {
+  const phone = digits(co.phoneNumber);
+  const sms = digits(co.smsNumber || co.phoneNumber);
+  const smsBody = encodeURIComponent(`안녕하세요. ${co.companyName} 청소 상담 문의드립니다.`);
+  if (type === 'phone') return phone ? `tel:${phone}` : '';
+  if (type === 'sms') return sms ? `sms:${sms}?body=${smsBody}` : '';
+  if (type === 'kakao') return co.kakaoChannelLink || '';
+  if (type === 'naver') return co.naverTalkLink || '';
+  return '';
+}
+
 function linkButton(label, href, className = '') {
-  const target = href || '#';
-  return `<a class="action ${className}" href="${target}" target="_blank" rel="noopener">${label}</a>`;
+  const disabled = !href;
+  const targetAttr = href && !href.startsWith('tel:') && !href.startsWith('sms:') ? ' target="_blank" rel="noopener"' : '';
+  return `<a class="action ${className} ${disabled ? 'disabled' : ''}" href="${href || '#'}"${targetAttr}>${label}</a>`;
 }
 
 function complete() {
@@ -371,10 +393,10 @@ function complete() {
       <h2>입력하신 내용</h2>
       <div class="summary">${rows}</div>
       <div class="actions">
-        ${linkButton('전화 상담 요청하기', co.phoneNumber ? `tel:${co.phoneNumber}` : '', 'primary-action phone-action')}
-        ${linkButton('카카오톡으로 상담 이어가기', co.kakaoLink, 'secondary-action kakao-action')}
-        ${linkButton('문자 상담하기', co.smsNumber ? `sms:${co.smsNumber}` : '', 'secondary-action')}
-        ${linkButton('네이버 톡톡으로 상담 이어가기', co.naverTalkLink, 'secondary-action')}
+        ${linkButton('전화 상담 요청하기', contactHref('phone'), 'primary-action phone-action')}
+        ${linkButton('카카오톡으로 상담 이어가기', contactHref('kakao'), 'secondary-action kakao-action')}
+        ${linkButton('문자 상담하기', contactHref('sms'), 'secondary-action')}
+        ${linkButton('네이버 톡톡으로 상담 이어가기', contactHref('naver'), 'secondary-action')}
       </div>
       <h2>대표님 전달용 상담 요약</h2>
       <button class="ghost copy-button" onclick="copy()">요약 복사하기</button>
