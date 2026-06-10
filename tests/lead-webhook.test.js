@@ -105,6 +105,26 @@ async function testCompleteSuccessAndFailureUi() {
   assert.ok(successCtx.__appState.html.includes('전화 상담 요청하기'));
   assert.ok(!successCtx.__appState.html.includes('<textarea id="admin" class="admin-visible"'));
 
+  const beaconCtx = createContext('zendella');
+  vm.runInContext(`co.leadWebhookUrl = 'https://script.google.com/macros/s/example/exec';`, beaconCtx);
+  let beaconUrl = '';
+  beaconCtx.Blob = class Blob {
+    constructor(parts, options) {
+      this.parts = parts;
+      this.options = options;
+    }
+  };
+  beaconCtx.navigator.sendBeacon = (url, blob) => {
+    beaconUrl = url;
+    assert.ok(blob.parts[0].includes('전데렐라의 청소생각'));
+    assert.strictEqual(blob.options.type, 'text/plain;charset=utf-8');
+    return true;
+  };
+  beaconCtx.fetch = async () => { throw new Error('fetch should not run after beacon success'); };
+  await beaconCtx.complete();
+  assert.strictEqual(beaconUrl, 'https://script.google.com/macros/s/example/exec');
+  assert.ok(beaconCtx.__appState.html.includes('상담 정보가 접수되었습니다.'));
+
   const failCtx = createContext('tsunami');
   vm.runInContext(`co.leadWebhookUrl = 'https://script.google.com/macros/s/example/exec';`, failCtx);
   failCtx.fetch = async () => { throw new Error('network failed'); };

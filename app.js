@@ -572,12 +572,24 @@ async function submitLeadToGoogleSheet(selectedContactButton = '') {
     return { ok: false, skipped: true, message: 'leadWebhookUrl이 설정되지 않았습니다.' };
   }
 
+  const body = JSON.stringify(buildLeadPayload(selectedContactButton));
+
+  try {
+    if (navigator.sendBeacon && typeof Blob !== 'undefined') {
+      const queued = navigator.sendBeacon(url, new Blob([body], { type: 'text/plain;charset=utf-8' }));
+      if (queued) return { ok: true, queued: true };
+    }
+  } catch (error) {
+    console.warn('Lead submit beacon failed; falling back to fetch', error);
+  }
+
   try {
     await fetch(url, {
       method: 'POST',
       mode: 'no-cors',
+      keepalive: true,
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(buildLeadPayload(selectedContactButton))
+      body
     });
     return { ok: true };
   } catch (error) {
