@@ -98,3 +98,179 @@ function json_(payload) {
     .createTextOutput(JSON.stringify(payload))
     .setMimeType(ContentService.MimeType.JSON);
 }
+
+const STATUS_OPTIONS = [
+  '신규 접수',
+  '상담 진행중',
+  '견적 안내',
+  '예약 확정',
+  '작업 완료',
+  '후기 요청',
+  '보류',
+  '취소',
+  '테스트'
+];
+
+const TEST_ROW_MARKERS = [
+  '라비 저장 테스트',
+  '진단테스트',
+  'diagnostic-direct',
+  'hermes-test',
+  '공개폼 저장테스트',
+  '브라우저공개폼진단',
+  '최종브라우저진단',
+  'Chrome 공개폼 진단',
+  'sendBeacon 최종진단'
+];
+
+function setupConsultationSheetForOps() {
+  const sheet = getOrCreateSheet_();
+  const deletedRows = deleteTestRows_(sheet);
+  ensureOperationalHeaders_(sheet);
+  applyOperationalFormatting_(sheet);
+  applyStatusDropdown_(sheet);
+  applyBrandConditionalFormatting_(sheet);
+  return json_({ ok: true, message: 'operations sheet prepared', deletedRows });
+}
+
+function deleteTestRows_(sheet) {
+  const lastRow = sheet.getLastRow();
+  const lastColumn = sheet.getLastColumn();
+  if (lastRow < 2 || lastColumn < 1) return 0;
+
+  const values = sheet.getRange(2, 1, lastRow - 1, lastColumn).getValues();
+  const rowsToDelete = [];
+  values.forEach((row, index) => {
+    const rowText = row.map((cell) => String(cell || '')).join(' ');
+    if (TEST_ROW_MARKERS.some((marker) => rowText.includes(marker))) {
+      rowsToDelete.push(index + 2);
+    }
+  });
+
+  rowsToDelete.reverse().forEach((rowNumber) => sheet.deleteRow(rowNumber));
+  return rowsToDelete.length;
+}
+
+function ensureOperationalHeaders_(sheet) {
+  const headerRange = sheet.getRange(1, 1, 1, HEADERS.length);
+  const currentHeaders = headerRange.getValues()[0];
+  const hasAnyHeader = currentHeaders.some((cell) => cell);
+  if (!hasAnyHeader) headerRange.setValues([HEADERS]);
+}
+
+function applyOperationalFormatting_(sheet) {
+  const lastColumn = Math.max(sheet.getLastColumn(), HEADERS.length);
+  const lastRow = Math.max(sheet.getLastRow(), 2);
+
+  sheet.setFrozenRows(1);
+
+  const filterRange = sheet.getRange(1, 1, lastRow, lastColumn);
+  if (sheet.getFilter()) sheet.getFilter().remove();
+  filterRange.createFilter();
+
+  sheet.getRange(1, 1, 1, lastColumn)
+    .setFontWeight('bold')
+    .setBackground('#F1F5F9')
+    .setHorizontalAlignment('center');
+
+  const widths = {
+    '접수일시': 170,
+    '브랜드명': 160,
+    'company 값': 100,
+    '주소/건물명': 220,
+    '공간 유형': 120,
+    '상담 종류': 180,
+    '에어컨 종류': 140,
+    '에어컨 대수': 100,
+    '청소 이유': 200,
+    '에어컨 추가 내용': 240,
+    '평수/면적': 120,
+    '주거 구조': 180,
+    '상업 공간 형태': 180,
+    '작업 범위': 180,
+    '영업 상태': 120,
+    '짐/집기 여부': 140,
+    '오염 상태': 200,
+    '사진 상태': 150,
+    '희망 일정': 140,
+    '희망 시간대': 130,
+    '추가 요청사항': 260,
+    '선호 연락 방법': 140,
+    '고객이 선택한 연락 버튼': 170,
+    '관리자 상담 요약': 520,
+    '유입 경로': 260,
+    '접수 상태': 130
+  };
+
+  HEADERS.forEach((header, index) => {
+    sheet.setColumnWidth(index + 1, widths[header] || 140);
+  });
+  sheet.getRange(1, 1, lastRow, lastColumn).setVerticalAlignment('middle');
+  sheet.getRange(2, 1, Math.max(lastRow - 1, 1), lastColumn).setWrapStrategy(SpreadsheetApp.WrapStrategy.WRAP);
+}
+
+function applyStatusDropdown_(sheet) {
+  const statusColumn = HEADERS.indexOf('접수 상태') + 1;
+  if (statusColumn < 1) return;
+  const maxRows = Math.max(sheet.getMaxRows() - 1, 1);
+  const rule = SpreadsheetApp.newDataValidation()
+    .requireValueInList(STATUS_OPTIONS, true)
+    .setAllowInvalid(false)
+    .build();
+  sheet.getRange(2, statusColumn, maxRows, 1).setDataValidation(rule);
+}
+
+function applyBrandConditionalFormatting_(sheet) {
+  const lastRow = Math.max(sheet.getMaxRows(), 2);
+  const lastColumn = Math.max(sheet.getLastColumn(), HEADERS.length);
+  const brandColumn = HEADERS.indexOf('브랜드명') + 1;
+  const statusColumn = HEADERS.indexOf('접수 상태') + 1;
+  const rules = [];
+
+  if (brandColumn > 0) {
+    const brandRange = sheet.getRange(2, brandColumn, lastRow - 1, 1);
+    rules.push(
+      SpreadsheetApp.newConditionalFormatRule()
+        .whenTextContains('전데렐라')
+        .setBackground('#E7F5EF')
+        .setRanges([brandRange])
+        .build(),
+      SpreadsheetApp.newConditionalFormatRule()
+        .whenTextContains('쓰나미')
+        .setBackground('#EAF5FF')
+        .setRanges([brandRange])
+        .build(),
+      SpreadsheetApp.newConditionalFormatRule()
+        .whenTextContains('테스트')
+        .setBackground('#F3F4F6')
+        .setRanges([brandRange])
+        .build()
+    );
+  }
+
+  if (statusColumn > 0) {
+    const statusRange = sheet.getRange(2, statusColumn, lastRow - 1, 1);
+    const statusColors = {
+      '신규 접수': '#FEF3C7',
+      '상담 진행중': '#DBEAFE',
+      '견적 안내': '#EDE9FE',
+      '예약 확정': '#DCFCE7',
+      '작업 완료': '#D1FAE5',
+      '후기 요청': '#FCE7F3',
+      '보류': '#F3F4F6',
+      '취소': '#FEE2E2',
+      '테스트': '#E5E7EB'
+    };
+    Object.keys(statusColors).forEach((status) => {
+      rules.push(
+        SpreadsheetApp.newConditionalFormatRule()
+          .whenTextEqualTo(status)
+          .setBackground(statusColors[status])
+          .setRanges([statusRange])
+          .build()
+      );
+    });
+  }
+
+  sheet.setConditionalFormatRules(rules);
+}
