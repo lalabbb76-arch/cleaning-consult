@@ -123,7 +123,7 @@ function logo(size = '') {
 }
 
 function brandFooter(label = '믿고 맡기는 프리미엄 홈케어 상담') {
-  return `<div class="brand-footer">${logo('footer-logo')}<span>${escapeHtml(co.companyName)}</span><small>${label}</small></div>`;
+  return `<div class="brand-footer">${logo('footer-logo')}<div class="brand-copy"><span>${escapeHtml(co.companyName)}</span><small>${label}</small></div></div>`;
 }
 
 function servicePills() {
@@ -139,7 +139,7 @@ function init() {
 
 function hero() {
   $('#app').innerHTML = `
-    <div class="brand hero-brand">${logo()}<div><b>${co.companyName}</b><br><small>${co.toneLabel}</small></div></div>
+    <div class="brand hero-brand">${logo()}<div class="brand-copy"><b>${co.companyName}</b><small>${co.toneLabel}</small></div></div>
     <div class="hero-kicker">안심되는 프리미엄 홈케어 상담</div>
     <h1>${co.startTitle}</h1>
     <p class="hero-copy">${co.heroBody.replace(/\n/g, '<br>')}</p>
@@ -159,7 +159,7 @@ function hero() {
 
 function blog() {
   $('#blog').innerHTML = `
-    <div class="brand cta-brand">${logo()}<div><b>${co.companyName}</b><br><small>상담 링크 안내</small></div></div>
+    <div class="brand cta-brand">${logo()}<div class="brand-copy"><b>${co.companyName}</b><small>상담 링크 안내</small></div></div>
     <div class="cta-chip">에어컨 · 입주 · 이사 통합 상담</div>
     <h2>${co.blogCtaTitle}</h2>
     <p>${co.blogCtaBody.replace(/\n/g, '<br>')}</p>
@@ -211,7 +211,7 @@ function progress() {
 }
 
 function layout(title, body, footer = '') {
-  $('#app').innerHTML = `<div class="step-brand">${logo()}<div><b>${co.companyName}</b><small>${co.toneLabel}</small></div></div>${progress()}<section class="step"><h1>${title}</h1>${body}</section><div class="nav">${footer || '<button class="ghost skip" onclick="next()">건너뛰기</button><button class="primary next" onclick="next()">다음</button>'}</div>`;
+  $('#app').innerHTML = `<div class="step-brand">${logo()}<div class="brand-copy"><b>${co.companyName}</b><small>${co.toneLabel}</small></div></div>${progress()}<section class="step"><h1>${title}</h1>${body}</section><div class="nav">${footer || '<button class="ghost skip" onclick="next()">건너뛰기</button><button class="primary next" onclick="next()">다음</button>'}</div>`;
 }
 
 function chips(field, options, multi = false, extraClass = '') {
@@ -557,7 +557,7 @@ function complete() {
   const rows = summaryRows().map(([label, value]) => `<div><b>${label}</b><span>${value || '미입력'}</span></div>`).join('');
   const admin = adminText();
   $('#app').innerHTML = `
-    <div class="brand">${logo()}<div><b>${co.companyName}</b><br><small>상담 접수 완료</small></div></div>
+    <div class="brand complete-brand">${logo()}<div class="brand-copy"><b>${co.companyName}</b><small>상담 접수 완료</small></div></div>
     <section class="complete">
       <h1>${co.completeTitle}</h1>
       <p>${co.completeBody}</p>
