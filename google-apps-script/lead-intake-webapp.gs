@@ -63,6 +63,12 @@ function doPost(e) {
       data.leadStatus || '신규 접수'
     ]);
 
+    try {
+      sendTelegramLeadAlert_(data);
+    } catch (telegramError) {
+      console.error('Telegram alert failed', telegramError);
+    }
+
     return json_({ ok: true, message: 'saved' });
   } catch (error) {
     return json_({ ok: false, message: String(error && error.message ? error.message : error) });
@@ -97,6 +103,105 @@ function json_(payload) {
   return ContentService
     .createTextOutput(JSON.stringify(payload))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+function sendTelegramLeadAlert_(data) {
+  const properties = PropertiesService.getScriptProperties();
+  const token = properties.getProperty('TELEGRAM_BOT_TOKEN');
+  const chatIdsValue = properties.getProperty('TELEGRAM_CHAT_IDS') || properties.getProperty('TELEGRAM_CHAT_ID');
+
+  if (!token || !chatIdsValue) {
+    console.log('Telegram alert skipped: TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_IDS is missing');
+    return { ok: false, skipped: true, message: 'missing telegram properties' };
+  }
+
+  const chatIds = chatIdsValue
+    .split(',')
+    .map((chatId) => chatId.trim())
+    .filter(Boolean);
+
+  if (!chatIds.length) {
+    console.log('Telegram alert skipped: no valid chat ids');
+    return { ok: false, skipped: true, message: 'empty chat ids' };
+  }
+
+  const message = buildTelegramLeadMessage_(data);
+  const url = 'https://api.telegram.org/bot' + token + '/sendMessage';
+  const results = [];
+
+  chatIds.forEach((chatId) => {
+    const response = UrlFetchApp.fetch(url, {
+      method: 'post',
+      contentType: 'application/json',
+      muteHttpExceptions: true,
+      payload: JSON.stringify({
+        chat_id: chatId,
+        text: message,
+        disable_web_page_preview: true
+      })
+    });
+    const statusCode = response.getResponseCode();
+    const body = response.getContentText();
+    results.push({ chatId, statusCode, body });
+    if (statusCode < 200 || statusCode >= 300) {
+      console.error('Telegram sendMessage failed for chat_id=' + chatId + ': ' + body);
+    }
+  });
+
+  return { ok: true, results };
+}
+
+function buildTelegramLeadMessage_(data) {
+  const brandName = data.brandName || '브랜드 미확인';
+  const company = data.company || '';
+  const address = data.address || '주소 미입력';
+  const spaceType = data.spaceType || '공간 유형 미입력';
+  const serviceKinds = data.serviceKinds || '상담 종류 미입력';
+  const airconTypes = data.airconTypes || '';
+  const airconCount = data.airconCount || '';
+  const schedule = [data.preferredSchedule, data.preferredTime].filter(Boolean).join(' / ') || '희망 일정 미입력';
+  const contact = data.preferredContact || data.selectedContactButton || '연락 방법 미입력';
+  const requestNote = data.requestNote || data.airconNote || '';
+  const summary = data.managerSummary || '';
+
+  const lines = [
+    '[신규 상담 접수]',
+    '',
+    '브랜드: ' + brandName + (company ? ' (' + company + ')' : ''),
+    '주소/건물명: ' + address,
+    '공간 유형: ' + spaceType,
+    '상담 종류: ' + serviceKinds,
+    '에어컨: ' + ([airconTypes, airconCount].filter(Boolean).join(' / ') || '해당 없음'),
+    '희망 일정: ' + schedule,
+    '연락 방법: ' + contact
+  ];
+
+  if (requestNote) {
+    lines.push('', '추가 요청:', requestNote);
+  }
+  if (summary) {
+    lines.push('', '관리자 요약:', summary);
+  }
+
+  return lines.join('\n').slice(0, 3900);
+}
+
+function testTelegramLeadAlert() {
+  const result = sendTelegramLeadAlert_({
+    brandName: '라비 알림 테스트',
+    company: 'telegram-test',
+    address: 'Telegram 알림 연결 테스트',
+    spaceType: '테스트',
+    serviceKinds: '상담접수 알림 테스트',
+    airconTypes: '벽걸이',
+    airconCount: '1대',
+    preferredSchedule: '테스트 일정',
+    preferredTime: '테스트 시간',
+    preferredContact: 'Telegram 알림',
+    requestNote: 'Script Properties 연결 확인용 테스트입니다.',
+    managerSummary: '이 메시지가 윤경님 DM에 도착하면 Telegram 알림 준비가 된 상태입니다.'
+  });
+  return json_(result);
 }
 
 const STATUS_OPTIONS = [
