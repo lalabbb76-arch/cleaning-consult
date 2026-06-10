@@ -65,7 +65,7 @@ const companySettings = {
   tsunami: {
     companyName: '쓰나미파워클린',
     logoText: '쓰',
-    logo: 'assets/logos/tsunami-logo.svg',
+    logo: 'assets/logos/tsunami-official-logo.png',
     logoAlt: '쓰나미파워클린 로고',
     logoMark: '쓰',
     mainColor: '#1E88E5',
