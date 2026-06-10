@@ -479,57 +479,113 @@ function summaryRows() {
   return rows;
 }
 
+function compactList(values) {
+  return Array.isArray(values) ? values.join(', ') : (values || '');
+}
+
+function joinedExtraNotes() {
+  return [f.structureNote, f.commercialNote, f.repairNote].filter(Boolean).join(' / ');
+}
+
 function adminText() {
   const lines = [
     `[${co.adminSummaryTitle}]`,
     '',
+    `접수일시: ${new Date().toLocaleString('ko-KR')}`,
     `주소/건물명: ${f.address || ''}`,
     `공간 유형: ${f.spaceType || ''}`,
-    `상담 종류: ${serviceText()}`
-  ];
-
-  if (needsSpaceDetail()) lines.push(`면적: ${f.area || ''}`);
-
-  if (isCommercialSpace() && needsSpaceDetail()) {
-    lines.push(
-      `공간 형태: ${f.commercialShape.join(', ')}`,
-      `작업 범위: ${f.workScope.join(', ')}`,
-      `영업 상태: ${f.businessStatus || ''}`,
-      `짐/집기 여부: ${f.fixtureLevel || ''}`
-    );
-  } else if (isResidentialSpace() && needsSpaceDetail()) {
-    lines.push(
-      `방: ${f.rooms || ''}`,
-      `욕실: ${f.baths || ''}`,
-      `베란다: ${f.balcony || ''}`,
-      `확장 여부: ${f.expansion || ''}`,
-      `수리 여부: ${f.repair.join(', ')}`
-    );
-  }
-
-  if (hasAirconService()) {
-    lines.push(
-      `에어컨 종류: ${f.airconTypes.join(', ')}`,
-      `에어컨 대수: ${f.airconCount || ''}`,
-      `청소 이유: ${f.airconConcerns.join(', ')}`,
-      `에어컨 추가 내용: ${f.airconNote || ''}`
-    );
-  }
-
-  if (needsSpaceDetail()) lines.push(`오염 상태: ${f.dirt.join(', ')}`);
-
-  lines.push(
+    `상담 종류: ${serviceText()}`,
+    `에어컨 종류: ${compactList(f.airconTypes)}`,
+    `에어컨 대수: ${f.airconCount || ''}`,
+    `청소 이유: ${compactList(f.airconConcerns)}`,
+    `에어컨 추가 내용: ${f.airconNote || ''}`,
+    `평수/면적: ${f.area || ''}`,
+    `주거 구조: ${isResidentialSpace() && needsSpaceDetail() ? homeStructure() : ''}`,
+    `상업 공간 형태: ${compactList(f.commercialShape)}`,
+    `작업 범위: ${compactList(f.workScope)}`,
+    `영업 상태: ${f.businessStatus || ''}`,
+    `짐/집기 여부: ${f.fixtureLevel || ''}`,
+    `오염 상태: ${compactList(f.dirt)}`,
     '사진: 상담 후 별도 전송',
     `희망 일정: ${scheduleText()}`,
     `희망 시간대: ${f.scheduleTime || ''}`,
-    `추가 요청사항: ${f.scheduleNote || ''}`,
-    `선호 연락 방법: ${f.contact || ''}`,
-    `추가 요청: ${[f.structureNote, f.commercialNote, f.repairNote].filter(Boolean).join(' / ')}`,
-    '',
-    `내부 확인 필요도: ${risk()}`
-  );
+    `추가 요청사항: ${[f.scheduleNote, joinedExtraNotes()].filter(Boolean).join(' / ')}`,
+    `선호 연락 방법: ${f.contact || ''}`
+  ];
 
   return lines.join('\n');
+}
+
+function smsDraftText() {
+  return [
+    '안녕하세요. 청소 상담 문의드립니다.',
+    '',
+    `브랜드: ${co.companyName}`,
+    `주소/건물명: ${f.address || ''}`,
+    `공간 유형: ${f.spaceType || ''}`,
+    `상담 종류: ${serviceText()}`,
+    `에어컨 종류: ${compactList(f.airconTypes)}`,
+    `에어컨 대수: ${f.airconCount || ''}`,
+    `청소 이유: ${compactList(f.airconConcerns)}`,
+    `에어컨 추가 내용: ${f.airconNote || ''}`,
+    `평수/면적: ${f.area || ''}`,
+    `오염 상태: ${compactList(f.dirt)}`,
+    `희망 일정: ${scheduleText()}`,
+    `희망 시간대: ${f.scheduleTime || ''}`,
+    `추가 요청사항: ${[f.scheduleNote, joinedExtraNotes()].filter(Boolean).join(' / ')}`,
+    '사진: 상담 후 별도 전송'
+  ].join('\n');
+}
+
+function buildLeadPayload(selectedContactButton = '') {
+  return {
+    receivedAt: new Date().toISOString(),
+    brandName: co.companyName,
+    company: key,
+    address: f.address || '',
+    spaceType: f.spaceType || '',
+    serviceKinds: serviceText(),
+    airconTypes: compactList(f.airconTypes),
+    airconCount: f.airconCount || '',
+    airconConcerns: compactList(f.airconConcerns),
+    airconNote: f.airconNote || '',
+    area: f.area || '',
+    homeStructure: isResidentialSpace() && needsSpaceDetail() ? homeStructure() : '',
+    commercialShape: compactList(f.commercialShape),
+    workScope: compactList(f.workScope),
+    businessStatus: f.businessStatus || '',
+    fixtureLevel: f.fixtureLevel || '',
+    dirtStatus: compactList(f.dirt),
+    photoStatus: '상담 후 별도 전송',
+    preferredSchedule: scheduleText(),
+    preferredTime: f.scheduleTime || '',
+    requestNote: [f.scheduleNote, joinedExtraNotes()].filter(Boolean).join(' / '),
+    preferredContact: f.contact || '',
+    selectedContactButton: selectedContactButton || f.contact || '',
+    managerSummary: adminText(),
+    source: `${location.origin || ''}${location.pathname || ''}?company=${key}`,
+    leadStatus: '신규 접수'
+  };
+}
+
+async function submitLeadToGoogleSheet(selectedContactButton = '') {
+  const url = co.leadWebhookUrl || '';
+  if (!url) {
+    return { ok: false, skipped: true, message: 'leadWebhookUrl이 설정되지 않았습니다.' };
+  }
+
+  try {
+    await fetch(url, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(buildLeadPayload(selectedContactButton))
+    });
+    return { ok: true };
+  } catch (error) {
+    console.error('Lead submit failed', error);
+    return { ok: false, error, message: error.message };
+  }
 }
 
 function digits(value) {
@@ -539,7 +595,7 @@ function digits(value) {
 function contactHref(type) {
   const phone = digits(co.phoneNumber);
   const sms = digits(co.smsNumber || co.phoneNumber);
-  const smsBody = encodeURIComponent(`${adminText()}\n\n안녕하세요. 위 내용으로 ${co.companyName} 청소 상담 문의드립니다.`);
+  const smsBody = encodeURIComponent(smsDraftText());
   if (type === 'phone') return phone ? `tel:${phone}` : '';
   if (type === 'sms') return sms ? `sms:${sms}?body=${smsBody}` : '';
   if (type === 'kakao') return co.kakaoChannelLink || '';
@@ -547,40 +603,66 @@ function contactHref(type) {
   return '';
 }
 
-function linkButton(label, href, className = '') {
+function linkButton(label, href, className = '', selectedContactButton = '') {
   const disabled = !href;
   const targetAttr = href && !href.startsWith('tel:') && !href.startsWith('sms:') ? ' target="_blank" rel="noopener"' : '';
-  return `<a class="action ${className} ${disabled ? 'disabled' : ''}" href="${href || '#'}"${targetAttr}>${label}</a>`;
+  const clickAttr = selectedContactButton ? ` onclick="recordSelectedContactButton('${escapeJs(selectedContactButton)}')"` : '';
+  const labelText = href ? label : `${label}<small>준비 중입니다. 전화 또는 문자로 상담해주세요.</small>`;
+  return `<a class="action ${className} ${disabled ? 'disabled' : ''}" href="${href || '#'}"${targetAttr}${clickAttr}>${labelText}</a>`;
 }
 
-function complete() {
+function recordSelectedContactButton(label) {
+  f.selectedContactButton = label;
+  if (label) submitLeadToGoogleSheet(label);
+}
+
+async function complete() {
   const rows = summaryRows().map(([label, value]) => `<div><b>${label}</b><span>${value || '미입력'}</span></div>`).join('');
   const admin = adminText();
+  const submitResult = await submitLeadToGoogleSheet(f.contact || '완료 화면 진입');
+  const saveOk = submitResult.ok;
+  const title = saveOk ? '상담 정보가 접수되었습니다.' : '상담 정보 저장에 실패했습니다.';
+  const body = saveOk
+    ? '입력해주신 내용이 담당자가 확인할 수 있도록 정리되었습니다.'
+    : '하지만 아래 버튼으로 전화/문자 상담은 가능합니다. 통화가 어려우시면 문자 상담을 눌러 상담 내용을 보내주세요.';
+  const notice = saveOk
+    ? '빠른 상담을 원하시면 전화 상담을 눌러주세요.<br>통화가 어려우시면 문자, 카카오톡, 네이버 톡톡으로 이어서 보내주세요.<br><br>사진은 상담 후 별도 전송해주시면 더 정확히 안내드릴 수 있습니다.'
+    : '저장에 실패했더라도 상담은 계속 가능합니다.<br>전화 상담 또는 문자 상담 버튼을 이용해주세요.<br>문자 상담에는 상담 요약이 자동으로 들어갑니다.';
+
   $('#app').innerHTML = `
     <div class="brand complete-brand">${logo()}<div class="brand-copy"><b>${co.companyName}</b><small>상담 접수 완료</small></div></div>
     <section class="complete">
-      <h1>${co.completeTitle}</h1>
-      <p>${co.completeBody}</p>
-      <div class="hint strong-hint">상담 내용이 정리되었습니다.<br>선택하신 상담 종류를 기준으로 담당자가 확인합니다.<br>사진이 있으면 더 정확한 상담이 가능합니다.</div>
-      <h2>입력하신 내용</h2>
-      <div class="summary">${rows}</div>
+      <h1>${title}</h1>
+      <p>${body}</p>
+      <div class="hint strong-hint">${notice}</div>
       <div class="actions">
-        ${linkButton('전화 상담 요청하기', contactHref('phone'), 'primary-action phone-action')}
-        ${linkButton('카카오톡으로 상담 이어가기', contactHref('kakao'), 'secondary-action kakao-action')}
-        ${linkButton('문자 상담하기', contactHref('sms'), 'secondary-action')}
-        ${linkButton('네이버 톡톡으로 상담 이어가기', contactHref('naver'), 'secondary-action')}
+        ${linkButton('전화 상담 요청하기', contactHref('phone'), 'primary-action phone-action', '전화 상담')}
+        ${linkButton('카카오톡으로 상담 이어가기', contactHref('kakao'), 'secondary-action kakao-action', '카카오톡 상담')}
+        ${linkButton('문자 상담하기', contactHref('sms'), 'secondary-action', '문자 상담')}
+        ${linkButton('네이버 톡톡으로 상담 이어가기', contactHref('naver'), 'secondary-action', '네이버 톡톡 상담')}
       </div>
       <div class="copy-area">
         <button class="ghost copy-button" onclick="copy()">상담 내용 복사하기</button>
-        <textarea id="admin" class="admin-hidden" readonly aria-hidden="true" tabindex="-1">${admin}</textarea>
+        <button class="ghost copy-button" onclick="toggleSummary()">상담 요약 보기</button>
       </div>
+      <div id="summaryPanel" class="summary-panel hide">
+        <h2>입력하신 내용</h2>
+        <div class="summary">${rows}</div>
+        <textarea id="admin" readonly>${escapeHtml(admin)}</textarea>
+      </div>
+      <textarea id="adminHidden" class="admin-hidden" readonly aria-hidden="true" tabindex="-1">${escapeHtml(admin)}</textarea>
       <p><small>담당자가 확인 후 안내드립니다. 추가 사진이나 요청사항은 전화 상담 후 안내받은 번호, 카카오톡, 문자 또는 네이버 톡톡으로 보내주세요.</small></p>
       ${brandFooter('상담 접수 완료')}
     </section>`;
 }
 
+function toggleSummary() {
+  $('#summaryPanel').classList.toggle('hide');
+}
+
 function copy() {
-  navigator.clipboard.writeText($('#admin').value).then(() => alert('상담 요약을 복사했습니다.'));
+  const source = $('#adminHidden') || $('#admin');
+  navigator.clipboard.writeText(source.value).then(() => alert('상담 요약을 복사했습니다.'));
 }
 
 function switchCompany(nextKey) {

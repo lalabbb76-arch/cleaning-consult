@@ -44,6 +44,7 @@ const companySettings = {
     toneLabel: '따뜻하고 친절한 청소 상담',
     startTitle: '청소 상담을 시작해볼까요?',
     heroBody: balancedHeroBody,
+    leadWebhookUrl: '',
     kakaoChannelLink: '',
     naverTalkLink: '',
     phoneNumber: '010-8765-9925',
@@ -59,8 +60,8 @@ const companySettings = {
     dirtTitle: '걱정되는 부분을 골라주세요.',
     dirtOptions: commonDirtOptions,
     photoGuide: commonPhotoGuide,
-    completeTitle: '상담 정보가 정리되었습니다.',
-    completeBody: '입력해주신 내용을 기준으로 선택하신 청소 상담 종류와 필요한 확인 내용이 정리되었습니다. 정확한 금액은 사진과 현장 상태 확인 후 안내드립니다.',
+    completeTitle: '상담 정보가 접수되었습니다.',
+    completeBody: '입력해주신 내용이 담당자가 확인할 수 있도록 정리되었습니다.',
     adminSummaryTitle: '전데렐라의 청소생각 상담 접수'
   },
   tsunami: {
@@ -76,6 +77,7 @@ const companySettings = {
     toneLabel: '시원하고 전문적인 청소 상담',
     startTitle: '청소 상담을 시작해볼까요?',
     heroBody: balancedHeroBody,
+    leadWebhookUrl: '',
     kakaoChannelLink: '',
     naverTalkLink: '',
     phoneNumber: '010-4656-9925',
@@ -91,8 +93,8 @@ const companySettings = {
     dirtTitle: '걱정되는 부분을 골라주세요.',
     dirtOptions: commonDirtOptions,
     photoGuide: commonPhotoGuide,
-    completeTitle: '상담 정보가 정리되었습니다.',
-    completeBody: '입력해주신 내용을 기준으로 선택하신 청소 상담 종류와 필요한 확인 내용이 정리되었습니다. 정확한 금액은 사진과 현장 상태 확인 후 안내드립니다.',
+    completeTitle: '상담 정보가 접수되었습니다.',
+    completeBody: '입력해주신 내용이 담당자가 확인할 수 있도록 정리되었습니다.',
     adminSummaryTitle: '쓰나미파워클린 상담 접수'
   },
   sampleCompany: {
@@ -108,6 +110,7 @@ const companySettings = {
     toneLabel: '샘플 청소 상담',
     startTitle: '청소 상담을 시작해볼까요?',
     heroBody: balancedHeroBody,
+    leadWebhookUrl: '',
     kakaoChannelLink: '',
     naverTalkLink: '',
     phoneNumber: '',
@@ -123,8 +126,8 @@ const companySettings = {
     dirtTitle: '걱정되는 부분을 골라주세요.',
     dirtOptions: commonDirtOptions,
     photoGuide: commonPhotoGuide,
-    completeTitle: '상담 정보가 정리되었습니다.',
-    completeBody: '입력해주신 내용을 기준으로 상담에 필요한 정보가 정리되었습니다. 정확한 금액은 사진과 현장 상태 확인 후 안내드립니다.',
+    completeTitle: '상담 정보가 접수되었습니다.',
+    completeBody: '입력해주신 내용이 담당자가 확인할 수 있도록 정리되었습니다.',
     adminSummaryTitle: '샘플 업체 상담 접수'
   }
 };
