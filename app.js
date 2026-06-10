@@ -8,15 +8,17 @@ if (!companySettings[key]) key = 'zendella';
 let co = companySettings[key];
 let i = -1;
 
-const AIRCON_SERVICES = ['에어컨 분해청소', '벽걸이 에어컨 청소', '스탠드 에어컨 청소', '시스템 에어컨 청소'];
-const AIRCON_TYPES = ['벽걸이', '스탠드', '2 in 1', '시스템 1way', '시스템 4way', '천장형', '잘 모르겠어요'];
-const AIRCON_COUNTS = ['1대', '2대', '3대', '4대 이상', '잘 모르겠어요'];
-const AIRCON_CONCERNS = ['냄새', '곰팡이', '먼지', '바람 약함', '물 떨어짐', '오래 사용함', '아기/가족 건강 때문에', '잘 모르겠어요'];
+const AIRCON_SERVICES = ['에어컨 분해청소', '벽걸이 에어컨 청소', '스탠드 에어컨 청소', '2 in 1 에어컨 청소', '시스템 에어컨 청소'];
+const HOME_DETAIL_SERVICES = ['입주청소', '이사청소', '거주청소', '부분청소', '사무실청소', '상가청소'];
+const UNKNOWN = '잘 모르겠어요';
+const AIRCON_TYPES = ['벽걸이', '스탠드', '2 in 1', '시스템 1way', '시스템 4way', '천장형/매립형', UNKNOWN];
+const AIRCON_COUNTS = ['1대', '2대', '3대', '4대 이상', UNKNOWN];
+const AIRCON_CONCERNS = ['냄새', '곰팡이', '먼지', '바람 약함', '물 떨어짐', '오래 사용함', '아기/가족 건강 때문에', UNKNOWN];
 
 const f = {
   address: '',
   spaceType: '',
-  serviceKind: '',
+  serviceKinds: [],
   airconType: '',
   airconCount: '',
   airconConcerns: [],
@@ -39,11 +41,30 @@ const score = {
   '냄새': 1, '곰팡이': 2, '먼지': 1, '바람 약함': 1, '물 떨어짐': 2, '오래 사용함': 1,
   '아기/가족 건강 때문에': 1, '창틀 먼지': 1, '욕실 물때': 1, '주방 기름때': 2,
   '공사먼지': 2, '부분 인테리어 후 먼지': 2, '페인트 자국/먼지': 2, '수납장 내부 먼지': 1,
-  '반려동물 털': 1
+  '반려동물 털': 1, '짐이 있어요': 2
 };
 
-function isAirconService() {
-  return AIRCON_SERVICES.includes(f.serviceKind);
+function selectedServices() {
+  return f.serviceKinds || [];
+}
+
+function serviceText() {
+  return selectedServices().join(', ') || '미입력';
+}
+
+function hasAirconService() {
+  return selectedServices().some((item) => AIRCON_SERVICES.includes(item));
+}
+
+function hasHomeDetailService() {
+  const selected = selectedServices();
+  if (selected.length === 0 || selected.includes(UNKNOWN)) return true;
+  return selected.some((item) => HOME_DETAIL_SERVICES.includes(item));
+}
+
+function isAirconOnly() {
+  const selected = selectedServices();
+  return selected.length > 0 && selected.every((item) => AIRCON_SERVICES.includes(item));
 }
 
 function escapeHtml(value) {
@@ -79,7 +100,10 @@ function init() {
 function hero() {
   $('#app').innerHTML = `
     <div class="brand hero-brand">${logo()}<div><b>${co.companyName}</b><br><small>${co.toneLabel}</small></div></div>
-    <div class="hero-art"><div class="hero-badge">AIRCON<br>CLEAN</div><div class="fake"><div class="line w70"></div><div class="line"></div><div class="line w45"></div></div></div>
+    <div class="hero-art">
+      <div class="service-pills"><span>에어컨 분해청소</span><span>입주청소</span><span>이사청소</span></div>
+      <div class="fake"><div class="line w70"></div><div class="line"></div><div class="line w45"></div></div>
+    </div>
     <h1>${co.startTitle}</h1>
     <p>${co.heroBody.replace(/\n/g, '<br>')}</p>
     <button class="primary full hero-btn" onclick="start()">상담 시작하기</button>`;
@@ -89,7 +113,7 @@ function blog() {
   $('#blog').innerHTML = `
     <div class="brand">${logo()}<div><b>블로그 삽입용 CTA</b><br><small>${co.companyName}</small></div></div>
     <h2>${co.blogCtaTitle}</h2>
-    <p>${co.blogCtaBody}</p>
+    <p>${co.blogCtaBody.replace(/\n/g, '<br>')}</p>
     <button class="primary full" onclick="start()">${co.blogCtaButton}</button>
     <p><small>블로그, QR코드, 문자, 카카오톡, 네이버 플레이스에 연결할 수 있습니다.</small></p>`;
 }
@@ -101,9 +125,15 @@ function start() {
 
 function steps() {
   const base = ['address', 'space', 'service'];
-  if (isAirconService()) base.push('aircon');
-  base.push('area', 'home', 'repair', 'dirt', 'photos', 'schedule', 'contact', 'complete');
+  if (hasAirconService()) base.push('aircon');
+  if (hasHomeDetailService()) base.push('area', 'home', 'repair', 'dirt');
+  base.push('photos', 'schedule', 'contact', 'complete');
   return base;
+}
+
+function normalizeCurrentStep() {
+  const currentSteps = steps();
+  if (i >= currentSteps.length) i = currentSteps.length - 1;
 }
 
 function progress() {
@@ -117,15 +147,20 @@ function progress() {
 }
 
 function layout(title, body, footer = '') {
-  $('#app').innerHTML = `${progress()}<section class="step"><h1>${title}</h1>${body}</section><div class="nav">${footer || '<button class="ghost" onclick="next()">건너뛰기</button><button class="primary" onclick="next()">다음</button>'}</div>`;
+  $('#app').innerHTML = `${progress()}<section class="step"><h1>${title}</h1>${body}</section><div class="nav">${footer || '<button class="ghost skip" onclick="next()">건너뛰기</button><button class="primary next" onclick="next()">다음</button>'}</div>`;
 }
 
 function chips(field, options, multi = false, extraClass = '') {
   const values = multi ? f[field] : [f[field]];
-  return `<div class="chips ${extraClass}">${options.map((option) => `<button class="chip ${values.includes(option) ? 'sel' : ''}" onclick="${multi ? `tog('${field}','${escapeJs(option)}')` : `sel('${field}','${escapeJs(option)}')`}">${option}</button>`).join('')}</div>`;
+  return `<div class="chips ${extraClass}">${options.map((option) => {
+    const selected = values.includes(option);
+    const check = selected ? '<span class="checkmark">✓</span>' : '';
+    return `<button class="chip ${selected ? 'sel' : ''}" onclick="${multi ? `tog('${field}','${escapeJs(option)}')` : `sel('${field}','${escapeJs(option)}')`}">${check}${option}</button>`;
+  }).join('')}</div>`;
 }
 
 function render() {
+  normalizeCurrentStep();
   const step = steps()[i];
   if (step === 'address') {
     layout('청소할 곳의 주소나 건물명을 알려주세요.', `
@@ -138,39 +173,40 @@ function render() {
   }
   if (step === 'service') {
     layout('어떤 청소가 필요하신가요?', `
-      <p>4월부터 10월은 에어컨 분해청소 문의가 많습니다. 해당되시면 가장 앞쪽 항목을 선택해주세요.</p>
-      ${chips('serviceKind', co.serviceKinds, false, 'service-chips')}
-      <div class="hint">정확히 모르셔도 괜찮습니다. 상담 내용을 보고 필요한 범위를 함께 확인해드립니다.</div>`);
+      <p>필요한 청소를 모두 선택해주세요.<br>에어컨 청소와 입주·이사청소를 함께 상담받으실 수도 있습니다.</p>
+      ${chips('serviceKinds', co.serviceKinds, true, 'service-chips')}
+      <div class="hint">에어컨 청소와 입주·이사청소를 함께 선택하셔도 됩니다.<br>상담 내용을 보고 필요한 범위를 함께 확인해드립니다.</div>`);
   }
   if (step === 'aircon') {
     layout('에어컨 정보를 알려주세요.', `
-      <p>에어컨 종류와 대수를 알면 상담이 훨씬 빨라집니다.</p>
+      <p>정확히 모르셔도 괜찮습니다.<br>아는 부분만 선택해주시면 상담에 도움이 됩니다.</p>
       <h3>어떤 에어컨인가요?</h3>${chips('airconType', AIRCON_TYPES)}
       <h3>청소할 에어컨은 몇 대인가요?</h3>${chips('airconCount', AIRCON_COUNTS)}
       <h3>어떤 점이 걱정되시나요?</h3>${chips('airconConcerns', AIRCON_CONCERNS, true)}
       <textarea oninput="f.airconNote=this.value" placeholder="예: 거실 스탠드 1대, 안방 벽걸이 1대 / 2 in 1 / 시스템 에어컨 4대 / 냄새가 심해요">${escapeHtml(f.airconNote)}</textarea>`);
   }
   if (step === 'area') {
-    layout(co.areaTitle, `<p>정확하지 않아도 괜찮습니다. 비슷한 크기를 선택해주세요.</p>${chips('area', co.areaOptions)}`);
+    const optional = hasAirconService() ? '<div class="hint">에어컨 청소와 함께 상담받는 경우, 평수는 대략만 선택하셔도 괜찮습니다.</div>' : '';
+    layout(co.areaTitle, `<p>정확하지 않아도 괜찮습니다. 비슷한 크기를 선택해주세요.</p>${chips('area', co.areaOptions)}${optional}`);
   }
   if (step === 'home') {
     layout('구조를 알고 계시면 선택해주세요.', `
       <p>방, 욕실, 베란다 개수를 알려주시면 상담에 도움이 됩니다.</p>
-      <h3>방은 몇 개인가요?</h3>${chips('rooms', ['1개', '2개', '3개', '4개 이상', '잘 모르겠어요'])}
-      <h3>욕실은 몇 개인가요?</h3>${chips('baths', ['1개', '2개', '3개 이상', '잘 모르겠어요'])}
-      <h3>베란다나 다용도실이 있나요?</h3>${chips('balcony', ['없음', '1개', '2개 이상', '잘 모르겠어요'])}
-      <h3>확장된 공간이 있나요?</h3>${chips('expansion', ['확장형', '비확장형', '일부 확장', '잘 모르겠어요'])}
+      <h3>방은 몇 개인가요?</h3>${chips('rooms', ['1개', '2개', '3개', '4개 이상', UNKNOWN])}
+      <h3>욕실은 몇 개인가요?</h3>${chips('baths', ['1개', '2개', '3개 이상', UNKNOWN])}
+      <h3>베란다나 다용도실이 있나요?</h3>${chips('balcony', ['없음', '1개', '2개 이상', UNKNOWN])}
+      <h3>확장된 공간이 있나요?</h3>${chips('expansion', ['확장형', '비확장형', '일부 확장', UNKNOWN])}
       <textarea oninput="f.structureNote=this.value" placeholder="예: 방3, 욕실2, 베란다1 / 거실 확장형">${escapeHtml(f.structureNote)}</textarea>`);
   }
   if (step === 'repair') {
     layout('최근 수리나 인테리어 작업이 있었나요?', `
       <p>공사 후 먼지, 페인트 자국, 마감 잔여물 확인에 도움이 됩니다.</p>
-      ${chips('repair', ['없어요', '전체 인테리어', '부분 인테리어', '도배/장판', '페인트', '주방', '욕실', '필름/문/몰딩', '기타', '잘 모르겠어요'], true)}
+      ${chips('repair', ['없어요', '전체 인테리어', '부분 인테리어', '도배/장판', '페인트', '주방', '욕실', '필름/문/몰딩', '기타', UNKNOWN], true)}
       <textarea oninput="f.repairNote=this.value" placeholder="예: 주방만 교체했어요 / 페인트 작업을 했어요">${escapeHtml(f.repairNote)}</textarea>`);
   }
   if (step === 'dirt') {
     layout(co.dirtTitle, `
-      <p>여러 개 선택하셔도 괜찮습니다. 에어컨 증상이나 청소 오염 상태를 선택해주세요.</p>
+      <p>여러 개 선택하셔도 괜찮습니다. 청소 오염 상태를 선택해주세요.</p>
       ${chips('dirt', co.dirtOptions, true)}
       <div class="hint">오염 상태는 평가가 아니라 작업 범위와 예산을 확인하기 위한 자료입니다.</div>`);
   }
@@ -184,7 +220,7 @@ function render() {
         <button class="ghost" onclick="examples()">사진 예시 보기</button>
         <button class="secondary" onclick="photoInfo()">상담 후 사진 보내기</button>
       </div>`,
-      `<button class="ghost" onclick="prev()">이전</button><button class="primary" onclick="next()">다음으로 넘어가기</button>`);
+      `<button class="ghost skip" onclick="prev()">이전</button><button class="primary next" onclick="next()">다음으로 넘어가기</button>`);
   }
   if (step === 'schedule') {
     layout('희망하시는 작업 일정이 있으신가요?', `
@@ -207,20 +243,26 @@ function render() {
 
 function sel(field, value) {
   f[field] = value;
-  if (field === 'serviceKind' && !isAirconService()) {
-    f.airconType = '';
-    f.airconCount = '';
-    f.airconConcerns = [];
-    f.airconNote = '';
-  }
   render();
 }
 
 function tog(field, value) {
   const arr = f[field];
   const idx = arr.indexOf(value);
-  if (idx >= 0) arr.splice(idx, 1);
-  else arr.push(value);
+  if (value === UNKNOWN) {
+    f[field] = idx >= 0 ? [] : [UNKNOWN];
+  } else {
+    const unknownIdx = arr.indexOf(UNKNOWN);
+    if (unknownIdx >= 0) arr.splice(unknownIdx, 1);
+    if (idx >= 0) arr.splice(idx, 1);
+    else arr.push(value);
+  }
+  if (field === 'serviceKinds' && !hasAirconService()) {
+    f.airconType = '';
+    f.airconCount = '';
+    f.airconConcerns = [];
+    f.airconNote = '';
+  }
   render();
 }
 
@@ -276,32 +318,40 @@ function homeStructure() {
 }
 
 function airconRows() {
-  if (!isAirconService()) return [];
+  if (!hasAirconService()) return [];
   return [
     ['에어컨 종류', f.airconType],
     ['에어컨 대수', f.airconCount],
-    ['증상/걱정되는 부분', f.airconConcerns.join(', ') || '미입력']
+    ['걱정되는 부분', f.airconConcerns.join(', ') || '미입력'],
+    ['에어컨 추가 내용', f.airconNote || '미입력']
   ];
 }
 
 function summaryRows() {
-  return [
+  const rows = [
     ['공간 유형', f.spaceType],
-    ['상담 종류', f.serviceKind],
-    ...airconRows(),
-    ['평수/구조', `${f.area || '미입력'} / ${homeStructure()}`],
-    ['수리 여부', f.repair.join(', ') || '미입력'],
-    ['오염 상태', f.dirt.join(', ') || '미입력'],
-    ['사진', '상담 후 별도 전송'],
-    ['희망 일정', f.schedule]
+    ['상담 종류', serviceText()],
+    ...airconRows()
   ];
+  if (hasHomeDetailService()) {
+    rows.push(
+      ['평수/구조', `${f.area || '미입력'} / ${homeStructure()}`],
+      ['수리 여부', f.repair.join(', ') || '미입력'],
+      ['오염 상태', f.dirt.join(', ') || '미입력']
+    );
+  }
+  rows.push(['사진', '상담 후 별도 전송'], ['희망 일정', f.schedule]);
+  return rows;
 }
 
 function adminText() {
-  const airconBlock = isAirconService()
-    ? `에어컨 종류: ${f.airconType || ''}\n에어컨 대수: ${f.airconCount || ''}\n증상/걱정되는 부분: ${f.airconConcerns.join(', ')}\n`
+  const airconBlock = hasAirconService()
+    ? `에어컨 종류: ${f.airconType || ''}\n에어컨 대수: ${f.airconCount || ''}\n에어컨 걱정 부분: ${f.airconConcerns.join(', ')}\n`
     : '';
-  return `[${co.adminSummaryTitle}]\n\n주소/건물명: ${f.address || ''}\n공간 유형: ${f.spaceType || ''}\n상담 종류: ${f.serviceKind || ''}\n${airconBlock}평수: ${f.area || ''}\n구조: ${homeStructure()}\n수리 여부: ${f.repair.join(', ')}\n오염 상태: ${f.dirt.join(', ')}\n사진: 상담 후 별도 전송\n희망 일정: ${f.schedule || ''}\n선호 연락 방법: ${f.contact || ''}\n추가 요청: ${[f.airconNote, f.structureNote, f.repairNote, f.scheduleNote].filter(Boolean).join(' / ')}\n\n내부 확인 필요도: ${risk()}`;
+  const homeBlock = hasHomeDetailService()
+    ? `평수: ${f.area || ''}\n구조: ${homeStructure()}\n수리 여부: ${f.repair.join(', ')}\n오염 상태: ${f.dirt.join(', ')}\n`
+    : '';
+  return `[${co.adminSummaryTitle}]\n\n주소/건물명: ${f.address || ''}\n공간 유형: ${f.spaceType || ''}\n상담 종류: ${serviceText()}\n${airconBlock}${homeBlock}사진: 상담 후 별도 전송\n희망 일정: ${f.schedule || ''}\n선호 연락 방법: ${f.contact || ''}\n추가 요청: ${[f.airconNote, f.structureNote, f.repairNote, f.scheduleNote].filter(Boolean).join(' / ')}\n\n내부 확인 필요도: ${risk()}`;
 }
 
 function linkButton(label, href, className = '') {
@@ -317,7 +367,7 @@ function complete() {
     <section class="complete">
       <h1>${co.completeTitle}</h1>
       <p>${co.completeBody}</p>
-      <div class="hint strong-hint">상담 내용이 정리되었습니다.<br>사진이 있으시면 전화 상담 후 안내받은 번호로 보내주시거나, 카카오톡, 문자, 네이버 톡톡으로 이어서 보내주세요.<br>사진이 있으면 더 정확한 상담이 가능합니다.</div>
+      <div class="hint strong-hint">상담 내용이 정리되었습니다.<br>선택하신 상담 종류를 기준으로 담당자가 확인합니다.<br>사진이 있으면 더 정확한 상담이 가능합니다.</div>
       <h2>입력하신 내용</h2>
       <div class="summary">${rows}</div>
       <div class="actions">
@@ -327,7 +377,7 @@ function complete() {
         ${linkButton('네이버 톡톡으로 상담 이어가기', co.naverTalkLink, 'secondary-action')}
       </div>
       <h2>대표님 전달용 상담 요약</h2>
-      <button class="ghost" onclick="copy()">요약 복사하기</button>
+      <button class="ghost copy-button" onclick="copy()">요약 복사하기</button>
       <textarea id="admin" readonly>${admin}</textarea>
       <p><small>담당자가 확인 후 안내드립니다. 추가 사진이나 요청사항은 전화 상담 후 안내받은 번호, 카카오톡, 문자 또는 네이버 톡톡으로 보내주세요.</small></p>
     </section>`;
