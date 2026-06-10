@@ -11,6 +11,12 @@ let i = -1;
 const AIRCON_SERVICES = ['에어컨 분해청소'];
 const HOME_DETAIL_SERVICES = ['입주청소', '이사청소', '거주청소', '정기청소', '부분청소', '사무실청소', '상가청소'];
 const UNKNOWN = '잘 모르겠어요';
+const RESIDENTIAL_SPACES = ['아파트', '빌라/다세대', '오피스텔', '주택', '원룸'];
+const COMMERCIAL_SPACES = ['사무실', '상가/매장', '학원', '병원', '공방', '창고', '기타 상업 공간', '학원/병원/공방', '기타'];
+const COMMERCIAL_SHAPES = ['오픈형 공간', '칸막이/룸 있음', '카운터/매대 있음', '탕비실 있음', '화장실 있음', '창고/보관실 있음', UNKNOWN];
+const COMMERCIAL_SCOPES = ['전체 공간', '바닥 위주', '유리/창문', '화장실', '탕비실/주방', '집기 주변', '입구/복도', UNKNOWN];
+const BUSINESS_STATUSES = ['영업 전', '영업 중', '폐업/공실', '이사 전후', UNKNOWN];
+const FIXTURE_LEVELS = ['거의 없음', '일부 있음', '많음', '이동 필요', UNKNOWN];
 const AIRCON_TYPES = ['벽걸이', '스탠드', '2 in 1', '시스템 1way', '시스템 4way', UNKNOWN];
 const AIRCON_COUNTS = ['1대', '2대', '3대', '4대 이상', UNKNOWN];
 const AIRCON_CONCERNS = ['냄새', '곰팡이', '먼지', '바람 약함', '물 떨어짐', '오래 사용함', '아기/가족 건강 때문에', UNKNOWN];
@@ -29,6 +35,11 @@ const f = {
   balcony: '',
   expansion: '',
   structureNote: '',
+  commercialShape: [],
+  workScope: [],
+  businessStatus: '',
+  fixtureLevel: '',
+  commercialNote: '',
   repair: [],
   repairNote: '',
   dirt: [],
@@ -60,6 +71,18 @@ function hasHomeDetailService() {
   const selected = selectedServices();
   if (selected.length === 0 || selected.includes(UNKNOWN)) return true;
   return selected.some((item) => HOME_DETAIL_SERVICES.includes(item));
+}
+
+function isResidentialSpace() {
+  return RESIDENTIAL_SPACES.includes(f.spaceType);
+}
+
+function isCommercialSpace() {
+  return COMMERCIAL_SPACES.includes(f.spaceType);
+}
+
+function needsSpaceDetail() {
+  return hasHomeDetailService() && !isAirconOnly();
 }
 
 function isAirconOnly() {
@@ -154,7 +177,16 @@ function start() {
 function steps() {
   const base = ['address', 'space', 'service'];
   if (hasAirconService()) base.push('aircon');
-  if (hasHomeDetailService()) base.push('area', 'home', 'repair', 'dirt');
+  if (needsSpaceDetail()) {
+    base.push('area');
+    if (isCommercialSpace()) {
+      base.push('commercial', 'dirt');
+    } else if (isResidentialSpace()) {
+      base.push('home', 'repair', 'dirt');
+    } else {
+      base.push('dirt');
+    }
+  }
   base.push('photos', 'schedule', 'contact', 'complete');
   return base;
 }
@@ -225,6 +257,15 @@ function render() {
       <h3>베란다나 다용도실이 있나요?</h3>${chips('balcony', ['없음', '1개', '2개 이상', UNKNOWN])}
       <h3>확장된 공간이 있나요?</h3>${chips('expansion', ['확장형', '비확장형', '일부 확장', UNKNOWN])}
       <textarea oninput="f.structureNote=this.value" placeholder="예: 방3, 욕실2, 베란다1 / 거실 확장형">${escapeHtml(f.structureNote)}</textarea>`);
+  }
+  if (step === 'commercial') {
+    layout('상업 공간 정보를 알려주세요.', `
+      <p>사무실, 상가, 학원, 병원, 공방처럼 주거 공간이 아닌 경우 작업 범위 중심으로 확인합니다.</p>
+      <h3>공간 형태를 알려주세요.</h3>${chips('commercialShape', COMMERCIAL_SHAPES, true)}
+      <h3>작업 범위는 어디인가요?</h3>${chips('workScope', COMMERCIAL_SCOPES, true)}
+      <h3>영업 중인 공간인가요?</h3>${chips('businessStatus', BUSINESS_STATUSES)}
+      <h3>짐이나 집기가 있나요?</h3>${chips('fixtureLevel', FIXTURE_LEVELS)}
+      <textarea oninput="f.commercialNote=this.value" placeholder="예: 사무실 책상 6개 정도 있어요 / 상가 공실입니다 / 학원 칸막이가 있어요 / 매장 바닥 위주로 보고 싶어요">${escapeHtml(f.commercialNote)}</textarea>`);
   }
   if (step === 'repair') {
     layout('최근 수리나 인테리어 작업이 있었나요?', `
@@ -351,6 +392,15 @@ function homeStructure() {
   return parts.join(' / ') || '미입력';
 }
 
+function commercialStructure() {
+  return [
+    ['공간 형태', f.commercialShape.join(', ') || '미입력'],
+    ['작업 범위', f.workScope.join(', ') || '미입력'],
+    ['영업 상태', f.businessStatus || '미입력'],
+    ['짐/집기 여부', f.fixtureLevel || '미입력']
+  ];
+}
+
 function airconRows() {
   if (!hasAirconService()) return [];
   return [
@@ -364,28 +414,74 @@ function airconRows() {
 function summaryRows() {
   const rows = [
     ['공간 유형', f.spaceType],
-    ['상담 종류', serviceText()],
-    ...airconRows()
+    ['상담 종류', serviceText()]
   ];
-  if (hasHomeDetailService()) {
+  if (needsSpaceDetail()) rows.push(['면적', f.area || '미입력']);
+  if (isCommercialSpace() && needsSpaceDetail()) {
+    rows.push(...commercialStructure());
+  } else if (isResidentialSpace() && needsSpaceDetail()) {
     rows.push(
-      ['평수/구조', `${f.area || '미입력'} / ${homeStructure()}`],
-      ['수리 여부', f.repair.join(', ') || '미입력'],
-      ['오염 상태', f.dirt.join(', ') || '미입력']
+      ['방', f.rooms || '미입력'],
+      ['욕실', f.baths || '미입력'],
+      ['베란다', f.balcony || '미입력'],
+      ['확장 여부', f.expansion || '미입력'],
+      ['수리 여부', f.repair.join(', ') || '미입력']
     );
   }
-  rows.push(['사진', '상담 후 별도 전송'], ['희망 일정', f.schedule]);
+  rows.push(...airconRows());
+  if (needsSpaceDetail()) rows.push(['오염 상태', f.dirt.join(', ') || '미입력']);
+  rows.push(['사진', '상담 후 별도 전송'], ['희망 일정', f.schedule], ['선호 연락 방법', f.contact]);
   return rows;
 }
 
 function adminText() {
-  const airconBlock = hasAirconService()
-    ? `에어컨 종류: ${f.airconTypes.join(', ')}\n에어컨 대수: ${f.airconCount || ''}\n에어컨 걱정 부분: ${f.airconConcerns.join(', ')}\n추가 내용: ${f.airconNote || ''}\n`
-    : '';
-  const homeBlock = hasHomeDetailService()
-    ? `평수: ${f.area || ''}\n구조: ${homeStructure()}\n수리 여부: ${f.repair.join(', ')}\n오염 상태: ${f.dirt.join(', ')}\n`
-    : '';
-  return `[${co.adminSummaryTitle}]\n\n주소/건물명: ${f.address || ''}\n공간 유형: ${f.spaceType || ''}\n상담 종류: ${serviceText()}\n${airconBlock}${homeBlock}사진: 상담 후 별도 전송\n희망 일정: ${f.schedule || ''}\n선호 연락 방법: ${f.contact || ''}\n추가 요청: ${[f.airconNote, f.structureNote, f.repairNote, f.scheduleNote].filter(Boolean).join(' / ')}\n\n내부 확인 필요도: ${risk()}`;
+  const lines = [
+    `[${co.adminSummaryTitle}]`,
+    '',
+    `주소/건물명: ${f.address || ''}`,
+    `공간 유형: ${f.spaceType || ''}`,
+    `상담 종류: ${serviceText()}`
+  ];
+
+  if (needsSpaceDetail()) lines.push(`면적: ${f.area || ''}`);
+
+  if (isCommercialSpace() && needsSpaceDetail()) {
+    lines.push(
+      `공간 형태: ${f.commercialShape.join(', ')}`,
+      `작업 범위: ${f.workScope.join(', ')}`,
+      `영업 상태: ${f.businessStatus || ''}`,
+      `짐/집기 여부: ${f.fixtureLevel || ''}`
+    );
+  } else if (isResidentialSpace() && needsSpaceDetail()) {
+    lines.push(
+      `방: ${f.rooms || ''}`,
+      `욕실: ${f.baths || ''}`,
+      `베란다: ${f.balcony || ''}`,
+      `확장 여부: ${f.expansion || ''}`,
+      `수리 여부: ${f.repair.join(', ')}`
+    );
+  }
+
+  if (hasAirconService()) {
+    lines.push(
+      `에어컨 종류: ${f.airconTypes.join(', ')}`,
+      `에어컨 대수: ${f.airconCount || ''}`,
+      `에어컨 걱정 부분: ${f.airconConcerns.join(', ')}`
+    );
+  }
+
+  if (needsSpaceDetail()) lines.push(`오염 상태: ${f.dirt.join(', ')}`);
+
+  lines.push(
+    '사진: 상담 후 별도 전송',
+    `희망 일정: ${f.schedule || ''}`,
+    `선호 연락 방법: ${f.contact || ''}`,
+    `추가 요청: ${[f.airconNote, f.structureNote, f.commercialNote, f.repairNote, f.scheduleNote].filter(Boolean).join(' / ')}`,
+    '',
+    `내부 확인 필요도: ${risk()}`
+  );
+
+  return lines.join('\n');
 }
 
 function digits(value) {
