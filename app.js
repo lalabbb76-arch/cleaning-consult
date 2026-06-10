@@ -44,6 +44,7 @@ const f = {
   repairNote: '',
   dirt: [],
   schedule: '',
+  scheduleDate: '',
   scheduleNote: '',
   contact: ''
 };
@@ -293,8 +294,20 @@ function render() {
   }
   if (step === 'schedule') {
     layout('희망하시는 작업 일정이 있으신가요?', `
-      ${chips('schedule', ['이번 주', '다음 주', '날짜 선택', '아직 미정'])}
-      <textarea oninput="f.scheduleNote=this.value" placeholder="예: 오전이면 좋아요 / 주말 상담 원합니다">${escapeHtml(f.scheduleNote)}</textarea>`);
+      <div class="chips schedule-chips">
+        <button class="chip ${f.schedule === '이번 주' ? 'sel' : ''}" onclick="selectSchedule('이번 주')">이번 주</button>
+        <button class="chip ${f.schedule === '다음 주' ? 'sel' : ''}" onclick="selectSchedule('다음 주')">다음 주</button>
+        <button class="chip ${f.schedule === '날짜 선택' ? 'sel' : ''}" onclick="selectSchedule('날짜 선택')">날짜 선택</button>
+        <button class="chip ${f.schedule === '아직 미정' ? 'sel' : ''}" onclick="selectSchedule('아직 미정')">아직 미정</button>
+      </div>
+      ${f.schedule === '날짜 선택' ? `
+        <label class="date-picker-card">
+          <span>희망 날짜를 선택해주세요.</span>
+          <input type="date" value="${escapeHtml(f.scheduleDate)}" onchange="setScheduleDate(this.value)" aria-label="희망 날짜 선택">
+        </label>
+        <div class="selected-date ${f.scheduleDate ? '' : 'muted-date'}">${f.scheduleDate ? `선택한 날짜: ${formatDate(f.scheduleDate)}` : '날짜를 선택하면 여기에 표시됩니다.'}</div>
+      ` : ''}
+      <textarea oninput="f.scheduleNote=this.value" placeholder="예: 오전이면 좋아요 / 주말 상담 원합니다 / 이사 전날 가능할까요">${escapeHtml(f.scheduleNote)}</textarea>`);
   }
   if (step === 'contact') {
     layout('상담을 이어받을 방법을 선택해주세요.', `
@@ -319,6 +332,30 @@ function render() {
 function sel(field, value) {
   f[field] = value;
   render();
+}
+
+function selectSchedule(value) {
+  f.schedule = value;
+  if (value !== '날짜 선택') f.scheduleDate = '';
+  render();
+}
+
+function setScheduleDate(value) {
+  f.scheduleDate = value;
+  f.schedule = '날짜 선택';
+  render();
+}
+
+function formatDate(value) {
+  if (!value) return '';
+  const [year, month, day] = value.split('-');
+  if (!year || !month || !day) return value;
+  return `${year}년 ${Number(month)}월 ${Number(day)}일`;
+}
+
+function scheduleText() {
+  if (f.schedule === '날짜 선택') return f.scheduleDate ? formatDate(f.scheduleDate) : '날짜 선택';
+  return f.schedule || '';
 }
 
 function tog(field, value) {
@@ -430,7 +467,7 @@ function summaryRows() {
   }
   rows.push(...airconRows());
   if (needsSpaceDetail()) rows.push(['오염 상태', f.dirt.join(', ') || '미입력']);
-  rows.push(['사진', '상담 후 별도 전송'], ['희망 일정', f.schedule], ['선호 연락 방법', f.contact]);
+  rows.push(['사진', '상담 후 별도 전송'], ['희망 일정', scheduleText()], ['희망 시간/요청사항', f.scheduleNote || '미입력'], ['선호 연락 방법', f.contact]);
   return rows;
 }
 
@@ -474,9 +511,10 @@ function adminText() {
 
   lines.push(
     '사진: 상담 후 별도 전송',
-    `희망 일정: ${f.schedule || ''}`,
+    `희망 일정: ${scheduleText()}`,
+    `희망 시간/요청사항: ${f.scheduleNote || ''}`,
     `선호 연락 방법: ${f.contact || ''}`,
-    `추가 요청: ${[f.airconNote, f.structureNote, f.commercialNote, f.repairNote, f.scheduleNote].filter(Boolean).join(' / ')}`,
+    `추가 요청: ${[f.airconNote, f.structureNote, f.commercialNote, f.repairNote].filter(Boolean).join(' / ')}`,
     '',
     `내부 확인 필요도: ${risk()}`
   );
