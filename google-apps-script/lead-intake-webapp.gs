@@ -409,7 +409,31 @@ function testTelegramLeadAlert() {
 }
 
 function testDoPostWithSamplePayload() {
-  const samplePayload = {
+  const samplePayload = buildSampleLeadPayload_();
+  const fakeEvent = {
+    parameter: {
+      payload: JSON.stringify(samplePayload)
+    },
+    postData: {
+      type: 'application/x-www-form-urlencoded',
+      contents: 'payload=' + encodeURIComponent(JSON.stringify(samplePayload))
+    }
+  };
+  return doPost(fakeEvent);
+}
+
+function testTelegramWithSamplePayloadDirect() {
+  const samplePayload = buildSampleLeadPayload_();
+  Logger.log('DIRECT_SAMPLE_RAW ' + JSON.stringify(samplePayload));
+  const normalized = normalizeLeadPayload_(samplePayload);
+  Logger.log('DIRECT_SAMPLE_NORMALIZED ' + JSON.stringify(normalized));
+  const message = buildTelegramLeadMessage_(normalized);
+  Logger.log('DIRECT_SAMPLE_MESSAGE ' + message);
+  return json_(sendTelegramLeadAlert_(normalized));
+}
+
+function buildSampleLeadPayload_() {
+  return {
     receivedAt: new Date().toISOString(),
     brandName: '쓰나미파워클린',
     company: 'tsunami',
@@ -437,16 +461,6 @@ function testDoPostWithSamplePayload() {
     source: 'Apps Script 내부 테스트',
     leadStatus: '테스트'
   };
-  const fakeEvent = {
-    parameter: {
-      payload: JSON.stringify(samplePayload)
-    },
-    postData: {
-      type: 'application/x-www-form-urlencoded',
-      contents: 'payload=' + encodeURIComponent(JSON.stringify(samplePayload))
-    }
-  };
-  return doPost(fakeEvent);
 }
 
 const STATUS_OPTIONS = [
