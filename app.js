@@ -575,15 +575,6 @@ async function submitLeadToGoogleSheet(selectedContactButton = '') {
   const body = JSON.stringify(buildLeadPayload(selectedContactButton));
 
   try {
-    if (navigator.sendBeacon && typeof Blob !== 'undefined') {
-      const queued = navigator.sendBeacon(url, new Blob([body], { type: 'text/plain;charset=utf-8' }));
-      if (queued) return { ok: true, queued: true };
-    }
-  } catch (error) {
-    console.warn('Lead submit beacon failed; falling back to fetch', error);
-  }
-
-  try {
     await fetch(url, {
       method: 'POST',
       mode: 'no-cors',
@@ -593,9 +584,19 @@ async function submitLeadToGoogleSheet(selectedContactButton = '') {
     });
     return { ok: true };
   } catch (error) {
-    console.error('Lead submit failed', error);
-    return { ok: false, error, message: error.message };
+    console.error('Lead submit fetch failed', error);
   }
+
+  try {
+    if (navigator.sendBeacon && typeof Blob !== 'undefined') {
+      const queued = navigator.sendBeacon(url, new Blob([body], { type: 'text/plain;charset=utf-8' }));
+      if (queued) return { ok: true, queued: true, fallback: 'sendBeacon' };
+    }
+  } catch (beaconError) {
+    console.warn('Lead submit beacon fallback failed', beaconError);
+  }
+
+  return { ok: false, message: '상담 접수 저장 요청을 보내지 못했습니다.' };
 }
 
 function digits(value) {

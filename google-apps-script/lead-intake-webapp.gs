@@ -32,7 +32,8 @@ const HEADERS = [
 function doPost(e) {
   try {
     const sheet = getOrCreateSheet_();
-    const data = parsePayload_(e);
+    const data = normalizeLeadPayload_(parsePayload_(e));
+    Logger.log(JSON.stringify(data));
 
     sheet.appendRow([
       data.receivedAt || new Date(),
@@ -97,6 +98,39 @@ function getOrCreateSheet_() {
 function parsePayload_(e) {
   if (!e || !e.postData || !e.postData.contents) return {};
   return JSON.parse(e.postData.contents);
+}
+
+function normalizeLeadPayload_(payload) {
+  if (!payload || typeof payload !== 'object') return {};
+  const data = payload.data || payload.lead || payload.payload || payload;
+  return {
+    receivedAt: data.receivedAt || data.timestamp || data.createdAt || '',
+    brandName: data.brandName || data.companyName || data.brand || '',
+    company: data.company || data.companyKey || data.key || '',
+    address: data.address || data.location || data.siteAddress || '',
+    spaceType: data.spaceType || data.space || '',
+    serviceKinds: data.serviceKinds || data.services || data.serviceType || '',
+    airconTypes: data.airconTypes || data.airconType || '',
+    airconCount: data.airconCount || data.airconQuantity || '',
+    airconConcerns: data.airconConcerns || data.airconReasons || data.cleaningReasons || '',
+    airconNote: data.airconNote || data.airconMemo || '',
+    area: data.area || data.size || '',
+    homeStructure: data.homeStructure || data.residentialStructure || '',
+    commercialShape: data.commercialShape || data.businessShape || '',
+    workScope: data.workScope || data.scope || '',
+    businessStatus: data.businessStatus || data.operationStatus || '',
+    fixtureLevel: data.fixtureLevel || data.fixtures || data.furnitureLevel || '',
+    dirtStatus: data.dirtStatus || data.dirt || data.contamination || '',
+    photoStatus: data.photoStatus || '',
+    preferredSchedule: data.preferredSchedule || data.schedule || data.scheduleDate || '',
+    preferredTime: data.preferredTime || data.scheduleTime || '',
+    requestNote: data.requestNote || data.scheduleNote || data.note || '',
+    preferredContact: data.preferredContact || data.contact || '',
+    selectedContactButton: data.selectedContactButton || data.contactButton || '',
+    managerSummary: data.managerSummary || data.adminSummary || '',
+    source: data.source || '',
+    leadStatus: data.leadStatus || ''
+  };
 }
 
 function json_(payload) {
