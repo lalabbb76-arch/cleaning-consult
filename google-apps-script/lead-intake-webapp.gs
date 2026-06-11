@@ -408,6 +408,47 @@ function testTelegramLeadAlert() {
   return json_(result);
 }
 
+function testDoPostWithSamplePayload() {
+  const samplePayload = {
+    receivedAt: new Date().toISOString(),
+    brandName: '쓰나미파워클린',
+    company: 'tsunami',
+    address: '공개폼 payload 확인 tsunami 2026-06-11T01:22:19.250Z',
+    spaceType: '아파트',
+    serviceKinds: '에어컨 분해청소, 이사청소',
+    airconTypes: '벽걸이, 스탠드',
+    airconCount: '2대',
+    airconConcerns: '냄새가 나요, 청소한 지 오래됐어요',
+    airconNote: '반려동물 있음, 쉰내 확인',
+    area: '24평',
+    homeStructure: '방 3개 / 욕실 2개',
+    commercialShape: '',
+    workScope: '전체 청소',
+    businessStatus: '',
+    fixtureLevel: '짐 없음',
+    dirtStatus: '주방 기름때',
+    photoStatus: '상담 후 별도 전송',
+    preferredSchedule: '이번 주',
+    preferredTime: '오후',
+    requestNote: '주말 전 희망',
+    preferredContact: '문자 상담',
+    selectedContactButton: '문자 상담',
+    managerSummary: '[쓰나미파워클린 상담 접수]\n\n접수일시: 2026. 6. 11. 오전 10:22:19\n주소/건물명: 공개폼 payload 확인 tsunami 2026-06-11T01:22:19.250Z\n공간 유형: 아파트\n상담 종류: 에어컨 분해청소, 이사청소\n에어컨 종류: 벽걸이, 스탠드\n에어컨 대수: 2대\n청소 이유: 냄새가 나요, 청소한 지 오래됐어요\n에어컨 추가 내용: 반려동물 있음, 쉰내 확인\n평수/면적: 24평\n주거 구조: 방 3개 / 욕실 2개\n상업 공간 형태: \n작업 범위: 전체 청소\n영업 상태: \n짐/집기 여부: 짐 없음\n오염 상태: 주방 기름때\n사진: 상담 후 별도 전송\n희망 일정: 이번 주\n희망 시간대: 오후\n추가 요청사항: 주말 전 희망\n선호 연락 방법: 문자 상담',
+    source: 'Apps Script 내부 테스트',
+    leadStatus: '테스트'
+  };
+  const fakeEvent = {
+    parameter: {
+      payload: JSON.stringify(samplePayload)
+    },
+    postData: {
+      type: 'application/x-www-form-urlencoded',
+      contents: 'payload=' + encodeURIComponent(JSON.stringify(samplePayload))
+    }
+  };
+  return doPost(fakeEvent);
+}
+
 const STATUS_OPTIONS = [
   '신규 접수',
   '상담 진행중',
