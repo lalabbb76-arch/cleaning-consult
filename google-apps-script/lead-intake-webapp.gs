@@ -32,8 +32,10 @@ const HEADERS = [
 function doPost(e) {
   try {
     const sheet = getOrCreateSheet_();
-    const data = normalizeLeadPayload_(parsePayload_(e));
-    Logger.log(JSON.stringify(data));
+    const rawPayload = parsePayload_(e);
+    Logger.log('RAW_PAYLOAD ' + JSON.stringify(rawPayload));
+    const data = normalizeLeadPayload_(rawPayload);
+    Logger.log('NORMALIZED_PAYLOAD ' + JSON.stringify(data));
 
     sheet.appendRow([
       data.receivedAt || new Date(),
@@ -96,41 +98,101 @@ function getOrCreateSheet_() {
 }
 
 function parsePayload_(e) {
-  if (!e || !e.postData || !e.postData.contents) return {};
-  return JSON.parse(e.postData.contents);
+  if (e && e.postData && e.postData.contents) {
+    return JSON.parse(e.postData.contents);
+  }
+  if (e && e.parameter && Object.keys(e.parameter).length) {
+    return e.parameter;
+  }
+  return {};
 }
 
 function normalizeLeadPayload_(payload) {
   if (!payload || typeof payload !== 'object') return {};
   const data = payload.data || payload.lead || payload.payload || payload;
+  const summary = data.managerSummary || data.adminSummary || '';
+  const parsed = parseManagerSummary_(summary);
+
   return {
-    receivedAt: data.receivedAt || data.timestamp || data.createdAt || '',
-    brandName: data.brandName || data.companyName || data.brand || '',
-    company: data.company || data.companyKey || data.key || '',
-    address: data.address || data.location || data.siteAddress || '',
-    spaceType: data.spaceType || data.space || '',
-    serviceKinds: data.serviceKinds || data.services || data.serviceType || '',
-    airconTypes: data.airconTypes || data.airconType || '',
-    airconCount: data.airconCount || data.airconQuantity || '',
-    airconConcerns: data.airconConcerns || data.airconReasons || data.cleaningReasons || '',
-    airconNote: data.airconNote || data.airconMemo || '',
-    area: data.area || data.size || '',
-    homeStructure: data.homeStructure || data.residentialStructure || '',
-    commercialShape: data.commercialShape || data.businessShape || '',
-    workScope: data.workScope || data.scope || '',
-    businessStatus: data.businessStatus || data.operationStatus || '',
-    fixtureLevel: data.fixtureLevel || data.fixtures || data.furnitureLevel || '',
-    dirtStatus: data.dirtStatus || data.dirt || data.contamination || '',
-    photoStatus: data.photoStatus || '',
-    preferredSchedule: data.preferredSchedule || data.schedule || data.scheduleDate || '',
-    preferredTime: data.preferredTime || data.scheduleTime || '',
-    requestNote: data.requestNote || data.scheduleNote || data.note || '',
-    preferredContact: data.preferredContact || data.contact || '',
-    selectedContactButton: data.selectedContactButton || data.contactButton || '',
-    managerSummary: data.managerSummary || data.adminSummary || '',
-    source: data.source || '',
-    leadStatus: data.leadStatus || ''
+    receivedAt: firstValue_(data.receivedAt, data.timestamp, data.createdAt, parsed.receivedAt),
+    brandName: firstValue_(data.brandName, data.companyName, data.brand, parsed.brandName),
+    company: firstValue_(data.company, data.companyKey, data.key),
+    address: firstValue_(data.address, data.location, data.siteAddress, parsed.address),
+    spaceType: firstValue_(data.spaceType, data.space, parsed.spaceType),
+    serviceKinds: firstValue_(data.serviceKinds, data.services, data.serviceType, parsed.serviceKinds),
+    airconTypes: firstValue_(data.airconTypes, data.airconType, parsed.airconTypes),
+    airconCount: firstValue_(data.airconCount, data.airconQuantity, parsed.airconCount),
+    airconConcerns: firstValue_(data.airconConcerns, data.airconReasons, data.cleaningReasons, parsed.airconConcerns),
+    airconNote: firstValue_(data.airconNote, data.airconMemo, parsed.airconNote),
+    area: firstValue_(data.area, data.size, parsed.area),
+    homeStructure: firstValue_(data.homeStructure, data.residentialStructure, parsed.homeStructure),
+    commercialShape: firstValue_(data.commercialShape, data.businessShape, parsed.commercialShape),
+    workScope: firstValue_(data.workScope, data.scope, parsed.workScope),
+    businessStatus: firstValue_(data.businessStatus, data.operationStatus, parsed.businessStatus),
+    fixtureLevel: firstValue_(data.fixtureLevel, data.fixtures, data.furnitureLevel, parsed.fixtureLevel),
+    dirtStatus: firstValue_(data.dirtStatus, data.dirt, data.contamination, parsed.dirtStatus),
+    photoStatus: firstValue_(data.photoStatus, parsed.photoStatus),
+    preferredSchedule: firstValue_(data.preferredSchedule, data.schedule, data.scheduleDate, parsed.preferredSchedule),
+    preferredTime: firstValue_(data.preferredTime, data.scheduleTime, parsed.preferredTime),
+    requestNote: firstValue_(data.requestNote, data.scheduleNote, data.note, parsed.requestNote),
+    preferredContact: firstValue_(data.preferredContact, data.contact, parsed.preferredContact),
+    selectedContactButton: firstValue_(data.selectedContactButton, data.contactButton),
+    managerSummary: summary,
+    source: firstValue_(data.source),
+    leadStatus: firstValue_(data.leadStatus)
   };
+}
+
+function parseManagerSummary_(summary) {
+  const text = String(summary || '');
+  const parsed = {};
+  if (!text) return parsed;
+
+  const firstLine = text.split('\n').map((line) => line.trim()).find(Boolean) || '';
+  if (firstLine.includes('전데렐라')) parsed.brandName = '전데렐라의 청소생각';
+  if (firstLine.includes('쓰나미')) parsed.brandName = '쓰나미파워클린';
+
+  const labelMap = {
+    '접수일시': 'receivedAt',
+    '주소/건물명': 'address',
+    '공간 유형': 'spaceType',
+    '상담 종류': 'serviceKinds',
+    '에어컨 종류': 'airconTypes',
+    '에어컨 대수': 'airconCount',
+    '청소 이유': 'airconConcerns',
+    '에어컨 추가 내용': 'airconNote',
+    '평수/면적': 'area',
+    '주거 구조': 'homeStructure',
+    '상업 공간 형태': 'commercialShape',
+    '작업 범위': 'workScope',
+    '영업 상태': 'businessStatus',
+    '짐/집기 여부': 'fixtureLevel',
+    '오염 상태': 'dirtStatus',
+    '사진': 'photoStatus',
+    '희망 일정': 'preferredSchedule',
+    '희망 시간대': 'preferredTime',
+    '추가 요청사항': 'requestNote',
+    '선호 연락 방법': 'preferredContact'
+  };
+
+  text.split('\n').forEach((line) => {
+    const index = line.indexOf(':');
+    if (index < 0) return;
+    const label = line.slice(0, index).trim();
+    const value = line.slice(index + 1).trim();
+    const key = labelMap[label];
+    if (key && normalizeValue_(value)) parsed[key] = value;
+  });
+
+  return parsed;
+}
+
+function firstValue_() {
+  for (let i = 0; i < arguments.length; i += 1) {
+    const value = normalizeValue_(arguments[i]);
+    if (value) return value;
+  }
+  return '';
 }
 
 function json_(payload) {
@@ -218,6 +280,9 @@ function buildTelegramLeadMessage_(data) {
   }
 
   const schedule = joinValues_([data.preferredSchedule, data.preferredTime]);
+  if (lines.length && String(lines[lines.length - 1]).startsWith('* ')) {
+    lines.push('');
+  }
   pushLineIfValue_(lines, '희망 일정', schedule, isTestAlert);
   pushLineIfValue_(lines, '연락 방법', data.preferredContact || data.selectedContactButton, isTestAlert);
   pushLineIfValue_(lines, '사진', data.photoStatus, isTestAlert);
