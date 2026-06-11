@@ -205,6 +205,7 @@ function buildTelegramLeadMessage_(data) {
 
   const hasSpaceCleaningService = includesAny_(data.serviceKinds, ['입주청소', '이사청소', '거주청소', '정기청소', '상가청소', '사무실청소', '고압세척']);
   const spaceLines = [];
+  pushBulletIfValue_(spaceLines, '공간 유형', data.spaceType, isTestAlert);
   pushBulletIfValue_(spaceLines, '평수/면적', data.area, isTestAlert);
   pushBulletIfValue_(spaceLines, '주거 구조', data.homeStructure, isTestAlert);
   pushBulletIfValue_(spaceLines, '작업 범위', data.workScope, isTestAlert);
