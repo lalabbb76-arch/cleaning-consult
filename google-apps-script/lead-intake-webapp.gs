@@ -234,8 +234,12 @@ function sendTelegramLeadAlert_(data) {
   const token = properties.getProperty('TELEGRAM_BOT_TOKEN');
   const chatIdsValue = properties.getProperty('TELEGRAM_CHAT_IDS') || properties.getProperty('TELEGRAM_CHAT_ID');
 
+  Logger.log('TELEGRAM_TOKEN_EXISTS ' + Boolean(token));
+  Logger.log('TELEGRAM_CHAT_IDS_VALUE_EXISTS ' + Boolean(chatIdsValue));
+
   if (!token || !chatIdsValue) {
     console.log('Telegram alert skipped: TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_IDS is missing');
+    Logger.log('TELEGRAM_ALERT_SKIPPED missing properties');
     return { ok: false, skipped: true, message: 'missing telegram properties' };
   }
 
@@ -244,12 +248,17 @@ function sendTelegramLeadAlert_(data) {
     .map((chatId) => chatId.trim())
     .filter(Boolean);
 
+  Logger.log('TELEGRAM_CHAT_IDS_MASKED ' + JSON.stringify(chatIds.map(maskChatId_)));
+
   if (!chatIds.length) {
     console.log('Telegram alert skipped: no valid chat ids');
+    Logger.log('TELEGRAM_ALERT_SKIPPED empty chat ids');
     return { ok: false, skipped: true, message: 'empty chat ids' };
   }
 
   const message = buildTelegramLeadMessage_(data);
+  Logger.log('TELEGRAM_MESSAGE_PREVIEW ' + message.slice(0, 1000));
+
   const url = 'https://api.telegram.org/bot' + token + '/sendMessage';
   const results = [];
 
@@ -266,13 +275,24 @@ function sendTelegramLeadAlert_(data) {
     });
     const statusCode = response.getResponseCode();
     const body = response.getContentText();
-    results.push({ chatId, statusCode, body });
+    const maskedChatId = maskChatId_(chatId);
+
+    Logger.log('TELEGRAM_SEND_RESULT chat_id=' + maskedChatId + ' statusCode=' + statusCode);
+    Logger.log('TELEGRAM_SEND_BODY chat_id=' + maskedChatId + ' body=' + body);
+
+    results.push({ chatId: maskedChatId, statusCode, body });
     if (statusCode < 200 || statusCode >= 300) {
-      console.error('Telegram sendMessage failed for chat_id=' + chatId + ': ' + body);
+      console.error('Telegram sendMessage failed for chat_id=' + maskedChatId + ': ' + body);
     }
   });
 
   return { ok: true, results };
+}
+
+function maskChatId_(chatId) {
+  const text = String(chatId || '').trim();
+  if (text.length <= 6) return '***';
+  return text.slice(0, 3) + '***' + text.slice(-3);
 }
 
 function buildTelegramLeadMessage_(data) {
