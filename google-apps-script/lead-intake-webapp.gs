@@ -152,38 +152,60 @@ function sendTelegramLeadAlert_(data) {
 }
 
 function buildTelegramLeadMessage_(data) {
-  const brandName = data.brandName || '브랜드 미확인';
-  const company = data.company || '';
+  const title = getTelegramLeadTitle_(data);
   const address = data.address || '주소 미입력';
-  const spaceType = data.spaceType || '공간 유형 미입력';
   const serviceKinds = data.serviceKinds || '상담 종류 미입력';
   const airconTypes = data.airconTypes || '';
   const airconCount = data.airconCount || '';
+  const airconInfo = [airconTypes, airconCount].filter(Boolean).join(' / ') || '해당 없음';
   const schedule = [data.preferredSchedule, data.preferredTime].filter(Boolean).join(' / ') || '희망 일정 미입력';
   const contact = data.preferredContact || data.selectedContactButton || '연락 방법 미입력';
+  const photoStatus = data.photoStatus || '상담 후 별도 전송';
   const requestNote = data.requestNote || data.airconNote || '';
-  const summary = data.managerSummary || '';
 
   const lines = [
-    '[신규 상담 접수]',
+    title,
     '',
-    '브랜드: ' + brandName + (company ? ' (' + company + ')' : ''),
-    '주소/건물명: ' + address,
-    '공간 유형: ' + spaceType,
-    '상담 종류: ' + serviceKinds,
-    '에어컨: ' + ([airconTypes, airconCount].filter(Boolean).join(' / ') || '해당 없음'),
-    '희망 일정: ' + schedule,
-    '연락 방법: ' + contact
+    '주소: ' + address,
+    '상담: ' + serviceKinds,
+    '에어컨: ' + airconInfo,
+    '희망: ' + schedule,
+    '연락: ' + contact,
+    '사진: ' + photoStatus
   ];
 
   if (requestNote) {
-    lines.push('', '추가 요청:', requestNote);
-  }
-  if (summary) {
-    lines.push('', '관리자 요약:', summary);
+    lines.push('', '요청:', requestNote);
   }
 
-  return lines.join('\n').slice(0, 3900);
+  lines.push('', '상세 내용은 상담접수 시트에서 확인해주세요.');
+
+  return lines.join('\n').slice(0, 2000);
+}
+
+function getTelegramLeadTitle_(data) {
+  const rowText = [
+    data.brandName,
+    data.company,
+    data.address,
+    data.serviceKinds,
+    data.airconNote,
+    data.requestNote,
+    data.managerSummary,
+    data.leadStatus
+  ].map((value) => String(value || '')).join(' ');
+
+  const testMarkers = ['테스트', '진단', 'telegram-test', 'hermes-test', 'diagnostic', 'Chrome', 'sendBeacon'];
+  if (testMarkers.some((marker) => rowText.includes(marker))) {
+    return '[테스트 상담 접수]';
+  }
+  if (String(data.company || '').includes('tsunami') || String(data.brandName || '').includes('쓰나미')) {
+    return '[쓰나미 신규 상담]';
+  }
+  if (String(data.company || '').includes('zendella') || String(data.brandName || '').includes('전데렐라')) {
+    return '[전데렐라 신규 상담]';
+  }
+  return '[신규 상담 접수]';
 }
 
 function testTelegramLeadAlert() {
