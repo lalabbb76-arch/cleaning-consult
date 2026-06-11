@@ -98,13 +98,41 @@ function getOrCreateSheet_() {
 }
 
 function parsePayload_(e) {
-  if (e && e.postData && e.postData.contents) {
-    return JSON.parse(e.postData.contents);
+  if (e && e.parameter && e.parameter.payload) {
+    return JSON.parse(e.parameter.payload);
   }
+
+  if (e && e.postData && e.postData.contents) {
+    const contents = e.postData.contents;
+    try {
+      return JSON.parse(contents);
+    } catch (jsonError) {
+      const parsed = parseUrlEncodedPayload_(contents);
+      if (parsed.payload) return JSON.parse(parsed.payload);
+      if (Object.keys(parsed).length) return parsed;
+      throw jsonError;
+    }
+  }
+
   if (e && e.parameter && Object.keys(e.parameter).length) {
     return e.parameter;
   }
+
   return {};
+}
+
+function parseUrlEncodedPayload_(contents) {
+  const result = {};
+  String(contents || '').split('&').forEach((part) => {
+    if (!part) return;
+    const index = part.indexOf('=');
+    const rawKey = index >= 0 ? part.slice(0, index) : part;
+    const rawValue = index >= 0 ? part.slice(index + 1) : '';
+    const key = decodeURIComponent(rawKey.replace(/\+/g, ' '));
+    const value = decodeURIComponent(rawValue.replace(/\+/g, ' '));
+    result[key] = value;
+  });
+  return result;
 }
 
 function normalizeLeadPayload_(payload) {

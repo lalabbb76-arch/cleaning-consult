@@ -99,7 +99,16 @@ function testSmsDraft() {
 async function testCompleteSuccessAndFailureUi() {
   const successCtx = createContext('tsunami');
   vm.runInContext(`co.leadWebhookUrl = 'https://script.google.com/macros/s/example/exec';`, successCtx);
-  successCtx.fetch = async () => ({ ok: true, json: async () => ({ ok: true }) });
+  successCtx.fetch = async (url, options) => {
+    assert.strictEqual(url, 'https://script.google.com/macros/s/example/exec');
+    assert.strictEqual(options.headers['Content-Type'], 'application/x-www-form-urlencoded;charset=UTF-8');
+    const params = new URLSearchParams(options.body);
+    const payload = JSON.parse(params.get('payload'));
+    assert.strictEqual(payload.brandName, '쓰나미파워클린');
+    assert.ok(payload.managerSummary.includes('상담 종류:'));
+    assert.ok(Object.prototype.hasOwnProperty.call(payload, 'address'));
+    return { ok: true, json: async () => ({ ok: true }) };
+  };
   await successCtx.complete();
   assert.ok(successCtx.__appState.html.includes('상담 정보가 접수되었습니다.'));
   assert.ok(successCtx.__appState.html.includes('전화 상담 요청하기'));
@@ -116,11 +125,13 @@ async function testCompleteSuccessAndFailureUi() {
   };
   beaconCtx.navigator.sendBeacon = (url, blob) => {
     beaconUrl = url;
-    assert.ok(blob.parts[0].includes('전데렐라의 청소생각'));
-    assert.strictEqual(blob.options.type, 'text/plain;charset=utf-8');
+    const params = new URLSearchParams(blob.parts[0]);
+    const payload = JSON.parse(params.get('payload'));
+    assert.strictEqual(payload.brandName, '전데렐라의 청소생각');
+    assert.strictEqual(blob.options.type, 'application/x-www-form-urlencoded;charset=UTF-8');
     return true;
   };
-  beaconCtx.fetch = async () => { throw new Error('fetch should not run after beacon success'); };
+  beaconCtx.fetch = async () => { throw new Error('network failed before beacon fallback'); };
   await beaconCtx.complete();
   assert.strictEqual(beaconUrl, 'https://script.google.com/macros/s/example/exec');
   assert.ok(beaconCtx.__appState.html.includes('상담 정보가 접수되었습니다.'));

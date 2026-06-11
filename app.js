@@ -573,14 +573,15 @@ async function submitLeadToGoogleSheet(selectedContactButton = '') {
   }
 
   const body = JSON.stringify(buildLeadPayload(selectedContactButton));
+  const formBody = new URLSearchParams({ payload: body }).toString();
 
   try {
     await fetch(url, {
       method: 'POST',
       mode: 'no-cors',
       keepalive: true,
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+      body: formBody
     });
     return { ok: true };
   } catch (error) {
@@ -589,7 +590,7 @@ async function submitLeadToGoogleSheet(selectedContactButton = '') {
 
   try {
     if (navigator.sendBeacon && typeof Blob !== 'undefined') {
-      const queued = navigator.sendBeacon(url, new Blob([body], { type: 'text/plain;charset=utf-8' }));
+      const queued = navigator.sendBeacon(url, new Blob([formBody], { type: 'application/x-www-form-urlencoded;charset=UTF-8' }));
       if (queued) return { ok: true, queued: true, fallback: 'sendBeacon' };
     }
   } catch (beaconError) {
