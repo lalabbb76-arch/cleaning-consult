@@ -153,34 +153,88 @@ function sendTelegramLeadAlert_(data) {
 
 function buildTelegramLeadMessage_(data) {
   const title = getTelegramLeadTitle_(data);
-  const address = data.address || '주소 미입력';
-  const serviceKinds = data.serviceKinds || '상담 종류 미입력';
-  const airconTypes = data.airconTypes || '';
-  const airconCount = data.airconCount || '';
-  const airconInfo = [airconTypes, airconCount].filter(Boolean).join(' / ') || '해당 없음';
-  const schedule = [data.preferredSchedule, data.preferredTime].filter(Boolean).join(' / ') || '희망 일정 미입력';
-  const contact = data.preferredContact || data.selectedContactButton || '연락 방법 미입력';
-  const photoStatus = data.photoStatus || '상담 후 별도 전송';
-  const requestNote = data.requestNote || data.airconNote || '';
+  const isTestAlert = title === '[테스트 상담 접수]';
+  const lines = [title, ''];
 
-  const lines = [
-    title,
-    '',
-    '주소: ' + address,
-    '상담: ' + serviceKinds,
-    '에어컨: ' + airconInfo,
-    '희망: ' + schedule,
-    '연락: ' + contact,
-    '사진: ' + photoStatus
-  ];
+  pushLineIfValue_(lines, '주소', data.address, isTestAlert);
+  pushLineIfValue_(lines, '상담', data.serviceKinds, isTestAlert);
 
-  if (requestNote) {
-    lines.push('', '요청:', requestNote);
+  const hasAirconService = includesAny_(data.serviceKinds, ['에어컨', '분해청소']);
+  const airconLines = [];
+  pushBulletIfValue_(airconLines, '종류', data.airconTypes, isTestAlert);
+  pushBulletIfValue_(airconLines, '대수', data.airconCount, isTestAlert);
+  pushBulletIfValue_(airconLines, '이유', data.airconConcerns, isTestAlert);
+  pushBulletIfValue_(airconLines, '추가 내용', data.airconNote, isTestAlert);
+  if (hasAirconService && airconLines.length) {
+    lines.push('', '에어컨:', ...airconLines);
   }
 
-  lines.push('', '상세 내용은 상담접수 시트에서 확인해주세요.');
+  const hasSpaceCleaningService = includesAny_(data.serviceKinds, ['입주청소', '이사청소', '거주청소', '정기청소', '상가청소', '사무실청소', '고압세척']);
+  const spaceLines = [];
+  pushBulletIfValue_(spaceLines, '평수/면적', data.area, isTestAlert);
+  pushBulletIfValue_(spaceLines, '주거 구조', data.homeStructure, isTestAlert);
+  pushBulletIfValue_(spaceLines, '작업 범위', data.workScope, isTestAlert);
+  pushBulletIfValue_(spaceLines, '짐/집기', data.fixtureLevel, isTestAlert);
+  pushBulletIfValue_(spaceLines, '오염 상태', data.dirtStatus, isTestAlert);
+  pushBulletIfValue_(spaceLines, '상업 공간 형태', data.commercialShape, isTestAlert);
+  pushBulletIfValue_(spaceLines, '영업 상태', data.businessStatus, isTestAlert);
+  if (hasSpaceCleaningService && spaceLines.length) {
+    lines.push('', '공간/청소:', ...spaceLines);
+  }
 
-  return lines.join('\n').slice(0, 2000);
+  const schedule = joinValues_([data.preferredSchedule, data.preferredTime]);
+  pushLineIfValue_(lines, '희망 일정', schedule, isTestAlert);
+  pushLineIfValue_(lines, '연락 방법', data.preferredContact || data.selectedContactButton, isTestAlert);
+  pushLineIfValue_(lines, '사진', data.photoStatus, isTestAlert);
+
+  const requestNote = normalizeValue_(data.requestNote);
+  if (requestNote) {
+    lines.push('', '추가 요청:', requestNote);
+  }
+
+  if (isTestAlert) {
+    lines.push('', '이 알림은 연결 확인용 테스트입니다.');
+  }
+
+  return lines.join('\n').slice(0, 3500);
+}
+
+function normalizeValue_(value) {
+  if (Array.isArray(value)) {
+    return value.map(normalizeValue_).filter(Boolean).join(', ');
+  }
+  const text = String(value == null ? '' : value).trim();
+  if (!text) return '';
+  const hiddenValues = ['미입력', '해당 없음', '없음', '선택 안 함', '선택안함', 'undefined', 'null'];
+  if (hiddenValues.includes(text)) return '';
+  return text;
+}
+
+function joinValues_(values) {
+  return values.map(normalizeValue_).filter(Boolean).join(' / ');
+}
+
+function pushLineIfValue_(lines, label, value, showMissing) {
+  const normalized = normalizeValue_(value);
+  if (normalized) {
+    lines.push(label + ': ' + normalized);
+  } else if (showMissing) {
+    lines.push(label + ': 미입력');
+  }
+}
+
+function pushBulletIfValue_(lines, label, value, showMissing) {
+  const normalized = normalizeValue_(value);
+  if (normalized) {
+    lines.push('* ' + label + ': ' + normalized);
+  } else if (showMissing) {
+    lines.push('* ' + label + ': 미입력');
+  }
+}
+
+function includesAny_(value, keywords) {
+  const text = normalizeValue_(value);
+  return keywords.some((keyword) => text.includes(keyword));
 }
 
 function getTelegramLeadTitle_(data) {
